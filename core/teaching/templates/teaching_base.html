@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Chat Room{% endblock %}
+
+{% block content %}
+<div class="d-flex" style="height: 100vh; overflow: hidden;">
+
+  <!-- 🧾 Sidebar -->
+  <div class="bg-dark text-white p-3" style="width: 250px;">
+    <h5 class="mb-3">🧠 Topics</h5>
+    <ul class="list-unstyled">
+      <li><a href="#" class="text-white d-block mb-2">Animals</a></li>
+      <li><a href="#" class="text-white d-block mb-2">Food</a></li>
+      <li><a href="#" class="text-white d-block mb-2">Daily Phrases</a></li>
+    </ul>
+  </div>
+
+  <!-- 💬 Chat Area -->
+  <div class="flex-grow-1 d-flex flex-column bg-light">
+    <!-- Header -->
+    <div class="bg-white p-3 border-bottom">
+      <h4 class="mb-0">Welcome, {{ request.user.username }}</h4>
+    </div>
+
+    <!-- Chat History -->
+    <div id="chat-box" class="flex-grow-1 p-4 overflow-auto">
+      <div class="mb-3">
+        <div class="text-muted small">System</div>
+        <div class="bg-white p-2 rounded border">Say the word shown below</div>
+      </div>
+
+      <!-- Results from backend will go here -->
+      <div id="chat-response" class="mb-3 d-none">
+        <div class="text-muted small">You</div>
+        <div class="bg-primary text-white p-2 rounded" id="user-transcript">...</div>
+
+        <div class="text-muted small mt-2">System</div>
+        <div class="bg-success text-white p-2 rounded" id="score-result">Score: 0%</div>
+      </div>
+    </div>
+
+    <!-- Footer: Recording UI -->
+    <div class="bg-white p-3 border-top">
+      <div class="input-group">
+        <input type="text" id="word" class="form-control" placeholder="Type or set word (e.g. elephant)" />
+        <button class="btn btn-danger" id="startRecord">🎙 Start</button>
+        <button class="btn btn-secondary" id="stopRecord">⏹ Stop</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
