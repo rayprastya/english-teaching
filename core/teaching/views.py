@@ -28,7 +28,9 @@ class RoomView(LoginRequiredMixin, View):
         }
         return render(request, self.template_name, context)
     
-    def post(self, request:
+    def post(self, request):
+        room = Room.objects.create(user=request.user, title=request.POST.get('title', 'New Chat'))
+        return redirect('room', room_id=room.id)
 
 class MessageView(LoginRequiredMixin, View):
     """
