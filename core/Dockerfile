@@ -10,4 +10,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 
-CMD ["gunicorn", "--bind", "0.0.0.0:3000", "yourproject.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:3000", "core.wsgi:application"]

@@ -3,7 +3,7 @@ version: '3.9'
 services:
   web:
     build: .
-    command: gunicorn yourproject.wsgi:application --bind 0.0.0.0:3000
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:3000
     volumes:
       - .:/app
     ports:
