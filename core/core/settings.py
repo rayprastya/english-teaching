@@ -82,7 +82,7 @@ DATABASES = {
         'NAME': constant.DB_NAME,
         'USER': constant.DB_USER,
         'PASSWORD': constant.DB_PASSWORD,
-        'HOST': 'localhost',
+        'HOST': 'db',
         'PORT': constant.DB_PORT,
     }
 }
