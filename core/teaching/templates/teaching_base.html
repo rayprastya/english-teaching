@@ -1,12 +1,16 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block title %}English Learning - {% block page_title %}{% endblock %}{% endblock %}
+
 {% block extra_css %}
-<link href="{% static 'css/teaching.css' %}" rel="stylesheet">
+{{ block.super }}
+<link href="{% static 'teaching/css/teaching.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/teaching.js' %}"></script>
+{{ block.super }}
+<script src="{% static 'teaching/js/teaching.js' %}"></script>
 {% endblock %}
 
 {% block content %}

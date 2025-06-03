@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}English Learning Assistant{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom CSS -->
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Base CSS -->
+    <style>
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* Scrollbar styles */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="{% url 'room' %}" class="text-xl font-bold text-blue-600">
+                            English Learning
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="flex items-center">
+                    {% if user.is_authenticated %}
+                        <div class="ml-4 flex items-center md:ml-6">
+                            <span class="text-gray-700 mr-4">{{ user.get_full_name|default:user.username }}</span>
+                            <button id="logoutButton" class="text-gray-600 hover:text-gray-900">
+                                Sign out
+                            </button>
+                        </div>
+                    {% else %}
+                        <div class="ml-4 flex items-center md:ml-6">
+                            <a href="{% url 'login' %}" class="text-gray-600 hover:text-gray-900 mr-4">
+                                Sign in
+                            </a>
+                            <a href="{% url 'signup' %}" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                                Sign up
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="min-h-screen">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <!-- <footer class="bg-white shadow-lg mt-8">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-500 text-sm">
+                © {% now "Y" %} English Learning Assistant. All rights reserved.
+            </p>
+        </div>
+    </footer> -->
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900">Confirm Sign Out</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500">
+                        Are you sure you want to sign out? You will need to sign in again to access your chats.
+                    </p>
+                </div>
+                <div class="mt-4 flex justify-end space-x-3">
+                    <button id="cancelLogout" class="px-4 py-2 text-gray-500 hover:text-gray-700">
+                        Cancel
+                    </button>
+                    <a href="{% url 'logout' %}" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">
+                        Sign Out
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Base JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle mobile menu toggle if needed
+            const mobileMenuButton = document.querySelector('[data-mobile-menu]');
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', function() {
+                    const mobileMenu = document.querySelector('[data-mobile-menu-items]');
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // Handle logout modal
+            const logoutButton = document.getElementById('logoutButton');
+            const logoutModal = document.getElementById('logoutModal');
+            const cancelLogout = document.getElementById('cancelLogout');
+
+            if (logoutButton && logoutModal && cancelLogout) {
+                logoutButton.addEventListener('click', () => {
+                    logoutModal.classList.remove('hidden');
+                });
+
+                cancelLogout.addEventListener('click', () => {
+                    logoutModal.classList.add('hidden');
+                });
+
+                // Close modal when clicking outside
+                logoutModal.addEventListener('click', (e) => {
+                    if (e.target === logoutModal) {
+                        logoutModal.classList.add('hidden');
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- Extra JavaScript -->
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

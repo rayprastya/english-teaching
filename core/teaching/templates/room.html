@@ -1,6 +1,8 @@
 {% extends 'teaching_base.html' %}
 {% load static %}
 
+{% block page_title %}Chat Room{% endblock %}
+
 {% block teaching_content %}
 <div class="flex h-screen bg-gray-100">
     <!-- Sidebar -->
@@ -11,49 +13,114 @@
             </button>
         </div>
         <div class="mt-4">
-            <h2 class="px-4 text-sm font-semibold text-gray-600">Recent Chats</h2>
+            <h2 class="px-4 text-sm font-semibold text-gray-600">Your Chats</h2>
             <div id="chatList" class="mt-2">
-                <!-- Chat history will be populated here -->
+                {% for user_room in user_rooms %}
+                <a href="{% url 'room_detail' user_room.id %}" 
+                   class="block px-4 py-2 text-sm {% if room and room.id == user_room.id %}bg-blue-50 text-blue-600 border-r-4 border-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
+                    <div class="flex items-center justify-between">
+                        <span class="truncate">{{ user_room.title }}</span>
+                        <span class="text-xs text-gray-500">{{ user_room.created_at|date:"M d" }}</span>
+                    </div>
+                </a>
+                {% empty %}
+                <div class="px-4 py-2 text-sm text-gray-500">
+                    No chats yet. Create your first chat!
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
 
     <!-- Main Chat Area -->
-    <div class="flex-1 flex flex-col">
-        <!-- Chat Messages -->
-        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
-            {% for message in messages %}
-            <div class="flex {% if message.role == 'user' %}justify-end{% endif %}">
-                <div class="max-w-2xl {% if message.role == 'user' %}bg-blue-500 text-white{% else %}bg-white{% endif %} rounded-lg p-4 shadow">
-                    <p>{{ message.content }}</p>
-                    {% if message.spelling_score is not None %}
-                    <div class="mt-2 text-sm {% if message.role == 'user' %}text-blue-100{% else %}text-gray-600{% endif %}">
-                        <p>Spelling Score: {{ message.spelling_score }}%</p>
-                        <p>Original Text: {{ message.original_text }}</p>
+    <div class="flex-1 flex flex-col h-screen">
+        {% if room %}
+            <div id="chatContainer" 
+                 data-room-id="{{ room.id }}"
+                 data-csrf-token="{{ csrf_token }}"
+                 data-send-message-url="{% url 'send_message' room.id %}"
+                 data-new-chat-url="{% url 'room' %}"
+                 class="flex flex-col h-full">
+                <!-- Chat Messages -->
+                <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
+                    {% for message in messages %}
+                    <div class="flex {% if message.role == 'user' %}justify-end{% endif %}">
+                        <div class="max-w-2xl {% if message.role == 'user' %}bg-blue-500 text-white{% else %}bg-white{% endif %} rounded-lg p-4 shadow">
+                            <p>{{ message.content }}</p>
+                            <!-- {% if message.spelling_score is not None %} -->
+                            <div class="mt-2 text-sm {% if message.role == 'user' %}text-blue-100{% else %}text-gray-600{% endif %}">
+                                <p>Spelling Score: {{ message.spelling_score }}%</p>
+                                {% if message.original_text %}
+                                <p>Original Text: {{ message.original_text }}</p>
+                                {% endif %}
+                                {% if message.expected_word %}
+                                <p>Expected Word: {{ message.expected_word }}</p>
+                                {% endif %}
+                            </div>
+                            <!-- {% endif %} -->
+                        </div>
                     </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
-            </div>
-            {% endfor %}
-        </div>
 
-        <!-- Input Area -->
-        <div class="border-t p-4 bg-white">
-            <div class="max-w-4xl mx-auto">
-                <div class="flex space-x-4">
-                    <button id="micButton" class="p-2 rounded-full hover:bg-gray-100">
-                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                        </svg>
-                    </button>
-                    <div class="flex-1">
-                        <textarea id="messageInput" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="1" placeholder="Type your message..."></textarea>
+                <!-- Input Area -->
+                <div class="sticky bottom-0 border-t p-4 bg-white">
+                    <div class="max-w-4xl mx-auto">
+                        <form id="messageForm" class="flex flex-col space-y-1">
+                            {% csrf_token %}
+                            <div class="flex justify-center">
+                                <button type="button" id="generateWords" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors">
+                                    Generate Words
+                                </button>
+                            </div>
+                            <div class="flex flex-col items-center space-y-4">
+                                <button type="button" id="micButton" class="p-6 rounded-full hover:bg-gray-100 transition-colors border-2 border-gray-300">
+                                    <svg class="w-16 h-16 text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                    </svg>
+                                </button>
+                                <!-- <div class="w-full">
+                                    <textarea id="messageInput" name="content" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="1" placeholder="Type your message..." readonly></textarea>
+                                </div> -->
+                            </div>
+                        </form>
                     </div>
-                    <button id="sendButton" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">
-                        Send
+                </div>
+            </div>
+        {% else %}
+            <!-- Welcome State -->
+            <div class="flex-1 flex items-center justify-center">
+                <div class="text-center space-y-4">
+                    <h2 class="text-2xl font-bold text-gray-900">Welcome to English Learning Assistant!</h2>
+                    <p class="text-gray-600">Create a new chat to start practicing your English.</p>
+                    <button id="welcomeNewChat" class="mt-4 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">
+                        Create New Chat
                     </button>
                 </div>
             </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- New Chat Modal -->
+<div id="newChatModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium text-gray-900">Create New Chat</h3>
+            <form id="newChatForm" class="mt-4" method="POST" action="{% url 'room' %}">
+                {% csrf_token %}
+                <div class="mt-2">
+                    <input type="text" name="title" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Chat Title">
+                </div>
+                <div class="mt-4 flex justify-end space-x-3">
+                    <button type="button" id="cancelNewChat" class="px-4 py-2 text-gray-500 hover:text-gray-700">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                        Create
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -64,15 +131,72 @@
 <script src="{% static 'teaching/js/chat.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    const chatConfig = {
-        roomId: "{{ room.id }}",
-        csrfToken: "{{ csrf_token }}",
-        urls: {
-            sendMessage: "{% url 'send_message' room.id %}",
-            newChat: "{% url 'room' %}"
+    const newChatBtn = document.getElementById('newChat');
+    const welcomeNewChatBtn = document.getElementById('welcomeNewChat');
+    const newChatModal = document.getElementById('newChatModal');
+    const cancelNewChatBtn = document.getElementById('cancelNewChat');
+    const messageForm = document.getElementById('messageForm');
+
+    function showNewChatModal() {
+        newChatModal.classList.remove('hidden');
+    }
+
+    function hideNewChatModal() {
+        newChatModal.classList.add('hidden');
+    }
+
+    if (newChatBtn) newChatBtn.addEventListener('click', showNewChatModal);
+    if (welcomeNewChatBtn) welcomeNewChatBtn.addEventListener('click', showNewChatModal);
+    if (cancelNewChatBtn) cancelNewChatBtn.addEventListener('click', hideNewChatModal);
+
+    // Close modal when clicking outside
+    newChatModal.addEventListener('click', (e) => {
+        if (e.target === newChatModal) {
+            hideNewChatModal();
         }
-    };
-    window.chatRoom = new ChatRoom(chatConfig);
+    });
+
+    // Handle form submission
+    if (messageForm) {
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const messageInput = document.getElementById('messageInput');
+            const content = messageInput.value.trim();
+            if (content) {
+                const formData = new FormData(messageForm);
+                fetch(messageForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (window.chatRoom) {
+                        window.chatRoom.appendMessage(data.user_message);
+                        window.chatRoom.appendMessage(data.assistant_message);
+                    }
+                    messageInput.value = '';
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+    }
+
+    // Initialize chat if container exists
+    const chatContainer = document.getElementById('chatContainer');
+    if (chatContainer) {
+        const chatConfig = {
+            roomId: chatContainer.dataset.roomId,
+            csrfToken: chatContainer.dataset.csrfToken,
+            urls: {
+                sendMessage: chatContainer.dataset.sendMessageUrl,
+                newChat: chatContainer.dataset.newChatUrl
+            }
+        };
+        window.chatRoom = new ChatRoom(chatConfig);
+    }
 });
 </script>
 {% endblock %}
