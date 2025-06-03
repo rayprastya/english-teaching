@@ -28,17 +28,15 @@ class RoomView(LoginRequiredMixin, View):
                 user=request.user
             )
             # Get last 50 messages ordered by creation time
-            messages = room.messages.all().order_by('-created_at')[:100]
+            messages = room.messages.all().order_by('-created_at')[:100][::-1]
         else:
             # No room selected, show welcome state
             room = None
             messages = None
 
-        print(messages)
-
         context = {
             'room': room,
-            'messages': messages[::-1],
+            'messages': messages,
             'user_rooms': user_rooms,
         }
         return render(request, self.template_name, context)
