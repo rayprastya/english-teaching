@@ -1,24 +1,92 @@
 // Chat room functionality
 class ChatRoom {
     constructor(config) {
-        this.config = config;
+        this.roomId = config.roomId;
+        this.csrfToken = config.csrfToken;
+        this.urls = config.urls;
         this.mediaRecorder = null;
         this.audioChunks = [];
         this.isRecording = false;
+        this.currentWord = null;
+
         this.setupEventListeners();
     }
 
     setupEventListeners() {
-        document.getElementById('micButton').addEventListener('click', () => this.toggleRecording());
-        document.getElementById('sendButton').addEventListener('click', () => this.sendMessage());
-        document.getElementById('newChat').addEventListener('click', () => window.location.href = this.config.urls.newChat);
+        const micButton = document.getElementById('micButton');
+        const sendButton = document.getElementById('sendButton');
+        const messageInput = document.getElementById('messageInput');
+        const generateWordsButton = document.getElementById('generateWords');
+
+        if (generateWordsButton) {
+            generateWordsButton.addEventListener('click', () => this.generateWords());
+        }
+
+        if (micButton) {
+            micButton.addEventListener('click', () => this.toggleRecording());
+        }
+
+        if (sendButton && messageInput) {
+            sendButton.addEventListener('click', () => {
+                const message = messageInput.value.trim();
+                if (message) {
+                    this.sendMessage(message);
+                    messageInput.value = '';
+                }
+            });
+
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const message = messageInput.value.trim();
+                    if (message) {
+                        this.sendMessage(message);
+                        messageInput.value = '';
+                    }
+                }
+            });
+        }
+    }
+
+    async generateWords() {
+        try {
+            const response = await fetch(this.urls.sendMessage, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.csrfToken
+                },
+                body: JSON.stringify({ action: 'generate_words' })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to generate words');
+            }
+
+            const data = await response.json();
+            console.log('Generated words:', data);
+            
+            if (data.assistant_message) {
+                this.appendMessage(data.assistant_message);
+                // Store the generated word for later use
+                this.currentWord = data.assistant_message.content;
+                // Update the input field
+                const messageInput = document.getElementById('messageInput');
+                if (messageInput) {
+                    messageInput.value = this.currentWord;
+                }
+            }
+        } catch (error) {
+            console.error('Error generating words:', error);
+            alert('Failed to generate words. Please try again.');
+        }
     }
 
     async toggleRecording() {
-        if (!this.isRecording) {
-            await this.startRecording();
-        } else {
+        if (this.isRecording) {
             this.stopRecording();
+        } else {
+            await this.startRecording();
         }
     }
 
@@ -27,85 +95,166 @@ class ChatRoom {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             this.mediaRecorder = new MediaRecorder(stream);
             this.audioChunks = [];
+            this.isRecording = true;
 
-            this.mediaRecorder.ondataavailable = (event) => {
+            const micButton = document.getElementById('micButton');
+            if (micButton) {
+                micButton.classList.add('recording');
+                micButton.classList.add('border-red-500');
+                const svg = micButton.querySelector('svg');
+                if (svg) {
+                    svg.classList.remove('text-gray-600');
+                    svg.classList.add('text-red-500');
+                }
+            }
+
+            this.mediaRecorder.addEventListener('dataavailable', (event) => {
                 this.audioChunks.push(event.data);
-            };
+            });
+
+            this.mediaRecorder.addEventListener('stop', () => {
+                const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
+                this.sendAudioMessage(audioBlob);
+                stream.getTracks().forEach(track => track.stop());
+            });
 
             this.mediaRecorder.start();
-            this.isRecording = true;
-            document.getElementById('micButton').classList.add('bg-red-500', 'recording');
-        } catch (err) {
-            console.error('Error accessing microphone:', err);
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+            alert('Could not access microphone. Please ensure you have granted microphone permissions.');
         }
     }
 
     stopRecording() {
-        this.mediaRecorder.stop();
-        this.isRecording = false;
-        document.getElementById('micButton').classList.remove('bg-red-500', 'recording');
+        if (this.mediaRecorder && this.isRecording) {
+            this.mediaRecorder.stop();
+            this.isRecording = false;
 
-        this.mediaRecorder.onstop = () => {
-            const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-            const reader = new FileReader();
-            reader.readAsDataURL(audioBlob);
-            reader.onloadend = () => {
-                const base64Audio = reader.result.split(',')[1];
-                this.sendMessage(base64Audio);
-            };
-        };
+            const micButton = document.getElementById('micButton');
+            if (micButton) {
+                micButton.classList.remove('recording');
+                micButton.classList.remove('border-red-500');
+                const svg = micButton.querySelector('svg');
+                if (svg) {
+                    svg.classList.remove('text-red-500');
+                    svg.classList.add('text-gray-600');
+                }
+            }
+        }
     }
 
-    sendMessage(audioData = null) {
-        const messageInput = document.getElementById('messageInput');
-        const message = messageInput.value.trim();
-        
-        if (!message && !audioData) return;
+    async sendMessage(content) {
+        try {
+            const response = await fetch(this.urls.sendMessage, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.csrfToken
+                },
+                body: JSON.stringify({ 
+                    content,
+                    expected_word: this.currentWord // Include the expected word for comparison
+                })
+            });
 
-        const data = {
-            message: message,
-            audio_data: audioData
-        };
+            if (!response.ok) {
+                throw new Error('Failed to send message');
+            }
 
-        fetch(this.config.urls.sendMessage, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': this.config.csrfToken
-            },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            this.appendMessage(data.user_message, 'user');
-            this.appendMessage(data.assistant_message, 'assistant');
-            messageInput.value = '';
-        })
-        .catch(error => console.error('Error:', error));
+            const data = await response.json();
+            console.log('Response data:', data);
+            
+            if (data.user_message) {
+                this.appendMessage(data.user_message);
+            }
+            if (data.assistant_message) {
+                this.appendMessage(data.assistant_message);
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            alert('Failed to send message. Please try again.');
+        }
     }
 
-    appendMessage(message, role) {
+    async sendAudioMessage(audioBlob) {
+        try {
+            const formData = new FormData();
+            formData.append('audio', audioBlob);
+            if (this.currentWord) {
+                formData.append('expected_word', this.currentWord);
+            }
+
+            const response = await fetch(this.urls.sendMessage, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.csrfToken
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to send audio message');
+            }
+
+            const data = await response.json();
+            if (data.user_message) {
+                this.appendMessage(data.user_message);
+            }
+            if (data.assistant_message) {
+                this.appendMessage(data.assistant_message);
+            }
+        } catch (error) {
+            console.error('Error sending audio message:', error);
+            alert('Failed to send audio message. Please try again.');
+        }
+    }
+
+    appendMessage(message) {
         const chatMessages = document.getElementById('chatMessages');
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `flex ${role === 'user' ? 'justify-end' : ''}`;
-        
-        let content = `
-            <div class="max-w-2xl ${role === 'user' ? 'bg-blue-500 text-white' : 'bg-white'} rounded-lg p-4 shadow">
-                <p>${message.content}</p>
-        `;
-
-        if (message.spelling_score !== undefined) {
-            content += `
-                <div class="mt-2 text-sm ${role === 'user' ? 'text-blue-100' : 'text-gray-600'}">
-                    <p>Spelling Score: ${message.spelling_score}%</p>
-                    <p>Original Text: ${message.original_text}</p>
-                </div>
-            `;
+        if (!chatMessages) {
+            console.error('Chat messages container not found');
+            return;
         }
 
-        content += '</div>';
-        messageDiv.innerHTML = content;
+        console.log('Appending message:', message);
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${message.role === 'user' ? 'justify-end' : ''}`;
+
+        const messageContent = document.createElement('div');
+        messageContent.className = `max-w-2xl ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white'} rounded-lg p-4 shadow`;
+
+        const contentP = document.createElement('p');
+        contentP.textContent = message.content;
+        messageContent.appendChild(contentP);
+
+        if (message.spelling_score !== undefined) {
+            const detailsDiv = document.createElement('div');
+            detailsDiv.className = `mt-2 text-sm ${message.role === 'user' ? 'text-blue-100' : 'text-gray-600'}`;
+
+            const scoreP = document.createElement('p');
+            scoreP.textContent = `Spelling Score: ${message.spelling_score}%`;
+            detailsDiv.appendChild(scoreP);
+
+            if (message.original_text) {
+                const originalP = document.createElement('p');
+                originalP.textContent = `Original Text: ${message.original_text}`;
+                detailsDiv.appendChild(originalP);
+            }
+
+            if (message.expected_word) {
+                const expectedP = document.createElement('p');
+                expectedP.textContent = `Expected Word: ${message.expected_word}`;
+                detailsDiv.appendChild(expectedP);
+            }
+
+            messageContent.appendChild(detailsDiv);
+        }
+
+        messageDiv.appendChild(messageContent);
         chatMessages.appendChild(messageDiv);
+        
+        // Scroll to bottom after adding new message
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 } 
