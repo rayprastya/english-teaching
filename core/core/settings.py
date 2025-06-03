@@ -39,11 +39,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'whitenoise.runserver_nostatic',
     'teaching',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -141,3 +143,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGOUT_REDIRECT_URL = ''
 LOGIN_REDIRECT_URL = ''
 LOGIN_URL = '/login/'
+
+# Whitenoise configuration
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+WHITENOISE_MANIFEST_STRICT = False
+WHITENOISE_USE_FINDERS = True

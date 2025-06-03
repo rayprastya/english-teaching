@@ -26,5 +26,5 @@ RUN mkdir -p static media staticfiles
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
-# Run gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:3000", "core.wsgi:application"]
+# Run gunicorn with whitenoise
+CMD ["gunicorn", "--bind", "0.0.0.0:3000", "--workers", "3", "core.wsgi:application"]
