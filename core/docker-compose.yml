@@ -17,7 +17,7 @@ services:
     image: postgres:15
     restart: always
     environment:
-      POSTGRES_DB: english_teacher
+      POSTGRES_DB: english-teacher
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
