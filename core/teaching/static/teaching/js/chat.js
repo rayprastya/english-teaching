@@ -8,8 +8,35 @@ class ChatRoom {
         this.audioChunks = [];
         this.isRecording = false;
         this.currentWord = null;
+        this.socket = null;
 
         this.setupEventListeners();
+        this.connectWebSocket();
+    }
+
+    connectWebSocket() {
+        this.socket = new WebSocket(this.urls.wsUrl);
+        
+        this.socket.onopen = () => {
+            console.log('WebSocket connection established');
+        };
+
+        this.socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'chat_message') {
+                this.appendMessage(data.message);
+            }
+        };
+
+        this.socket.onclose = () => {
+            console.log('WebSocket connection closed');
+            // Try to reconnect after 5 seconds
+            setTimeout(() => this.connectWebSocket(), 5000);
+        };
+
+        this.socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
     }
 
     setupEventListeners() {

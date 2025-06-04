@@ -192,7 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
             csrfToken: chatContainer.dataset.csrfToken,
             urls: {
                 sendMessage: chatContainer.dataset.sendMessageUrl,
-                newChat: chatContainer.dataset.newChatUrl
+                newChat: chatContainer.dataset.newChatUrl,
+                wsUrl: 'wss://{{ request.get_host }}/ws/chat/'
             }
         };
         window.chatRoom = new ChatRoom(chatConfig);
