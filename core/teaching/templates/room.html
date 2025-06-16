@@ -1,7 +1,7 @@
 {% extends 'teaching_base.html' %}
 {% load static %}
 
-{% block page_title %}Chat Room{% endblock %}
+{% block page_title %}English Conversation Practice{% endblock %}
 
 {% block teaching_content %}
 <div class="flex h-screen bg-gray-100">
@@ -39,25 +39,117 @@
                  data-room-id="{{ room.id }}"
                  data-csrf-token="{{ csrf_token }}"
                  data-send-message-url="{% url 'send_message' room.id %}"
+                 data-generate-topic-url="{% url 'generate_topic' room.id %}"
                  data-new-chat-url="{% url 'room' %}"
                  class="flex flex-col h-full">
+                
+                <!-- Header with Progress -->
+                <div class="bg-white border-b p-4">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-lg font-semibold text-gray-900">{{ room.title }}</h1>
+                        {% if current_session and not current_session.is_completed %}
+                        <div class="flex items-center space-x-2 text-sm text-gray-600">
+                            <span>Progress:</span>
+                            <div class="flex items-center space-x-1">
+                                <span class="font-medium">{{ current_session.current_exchange_index|add:1 }}</span>
+                                <span>/</span>
+                                <span>{{ current_session.dialogue.total_exchanges }}</span>
+                            </div>
+                            <div class="w-24 h-2 bg-gray-200 rounded-full">
+                                <div class="h-2 bg-blue-500 rounded-full" style="width: {% widthratio current_session.current_exchange_index current_session.dialogue.total_exchanges 100 %}%"></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Topic Selection Panel -->
+                {% if not current_session or current_session.is_completed %}
+                <div id="topicSelection" class="bg-blue-50 border-b p-4">
+                    <div class="max-w-4xl mx-auto">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Choose a Conversation Topic</h3>
+                        
+                        <!-- Popular Topics -->
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600 mb-2">Popular Topics:</p>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="Independence Day holiday">
+                                    Independence Day 🎆
+                                </button>
+                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="favorite food">
+                                    Favorite Food 🍕
+                                </button>
+                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="travel experiences">
+                                    Travel 🌎
+                                </button>
+                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="hobbies and interests">
+                                    Hobbies 🎨
+                                </button>
+                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="weather and seasons">
+                                    Weather ⛅
+                                </button>
+                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="family and friends">
+                                    Family 👨‍👩‍👧‍👦
+                                </button>
+                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="work and career">
+                                    Work 💼
+                                </button>
+                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="movies and entertainment">
+                                    Movies 🎬
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Custom Topic -->
+                        <div class="flex space-x-2">
+                            <input type="text" id="customTopic" placeholder="Or enter your own topic..." 
+                                   class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button id="generateConversation" class="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                                Generate Conversation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Expected Response Display -->
+                {% if current_session and not current_session.is_completed %}
+                <div id="expectedResponse" class="bg-yellow-50 border-b p-3">
+                    <div class="max-w-4xl mx-auto">
+                        <div class="flex items-center justify-between mb-1">
+                            <p class="text-sm text-gray-600">You should say:</p>
+                            <button id="playExpectedBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium flex items-center space-x-1">
+                                <span>🔊</span>
+                                <span>Play</span>
+                            </button>
+                        </div>
+                        <p id="expectedText" class="text-gray-900 font-medium">
+                            {% if current_expected_response %}
+                                {{ current_expected_response }}
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Chat Messages -->
                 <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-4">
                     {% for message in messages %}
                     <div class="flex {% if message.role == 'user' %}justify-end{% endif %}">
-                        <div class="max-w-2xl {% if message.role == 'user' %}bg-blue-500 text-white{% else %}bg-white{% endif %} rounded-lg p-4 shadow">
-                            <p>{{ message.content }}</p>
-                            <!-- {% if message.spelling_score is not None %} -->
+                        <div class="max-w-2xl {% if message.role == 'user' %}bg-blue-500 text-white{% else %}bg-white border{% endif %} rounded-lg p-4 shadow">
+                            <p class="whitespace-pre-line">{{ message.content }}</p>
+                            {% if message.spelling_score is not None %}
                             <div class="mt-2 text-sm {% if message.role == 'user' %}text-blue-100{% else %}text-gray-600{% endif %}">
-                                <p>Spelling Score: {{ message.spelling_score }}%</p>
-                                {% if message.original_text %}
-                                <p>Original Text: {{ message.original_text }}</p>
-                                {% endif %}
-                                {% if message.expected_word %}
-                                <p>Expected Word: {{ message.expected_word }}</p>
-                                {% endif %}
+                                <div class="flex items-center space-x-2">
+                                    <span>Score: {{ message.spelling_score }}%</span>
+                                    {% if message.spelling_score >= 70 %}
+                                    <span class="text-green-500">✓</span>
+                                    {% else %}
+                                    <span class="text-red-500">✗</span>
+                                    {% endif %}
+                                </div>
                             </div>
-                            <!-- {% endif %} -->
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}
@@ -66,24 +158,41 @@
                 <!-- Input Area -->
                 <div class="sticky bottom-0 border-t p-4 bg-white">
                     <div class="max-w-4xl mx-auto">
-                        <form id="messageForm" class="flex flex-col space-y-1">
-                            {% csrf_token %}
-                            <div class="flex justify-center">
-                                <button type="button" id="generateWords" class="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition-colors">
-                                    Generate Words
-                                </button>
+                        <!-- Status Messages -->
+                        <div id="statusMessage" class="hidden mb-4 p-3 rounded-lg"></div>
+                        
+                        <!-- Audio/Text Input -->
+                        <div class="flex flex-col items-center space-y-4">
+                            <!-- Recording Status -->
+                            <div id="recordingStatus" class="hidden text-center">
+                                <div class="inline-flex items-center space-x-2 bg-red-100 text-red-800 px-4 py-2 rounded-lg">
+                                    <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                    <span>Recording... Click to stop</span>
+                                </div>
                             </div>
-                            <div class="flex flex-col items-center space-y-4">
-                                <button type="button" id="micButton" class="p-6 rounded-full hover:bg-gray-100 transition-colors border-2 border-gray-300">
-                                    <svg class="w-16 h-16 text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                                    </svg>
-                                </button>
-                                <!-- <div class="w-full">
-                                    <textarea id="messageInput" name="content" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" rows="1" placeholder="Type your message..." readonly></textarea>
-                                </div> -->
+                            
+                            <!-- Microphone Button -->
+                            <button type="button" id="micButton" class="p-6 rounded-full hover:bg-gray-100 transition-colors border-2 border-gray-300">
+                                <svg class="w-16 h-16 text-gray-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                </svg>
+                            </button>
+                            
+                            <!-- Text Input Alternative -->
+                            <div class="w-full max-w-md">
+                                <form id="textForm" method="POST">
+                                    {% csrf_token %}
+                                    <!-- <div class="flex space-x-2">
+                                        <input type="text" id="textInput" name="content" 
+                                               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                                               placeholder="Or type your response...">
+                                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                                            Send
+                                        </button>
+                                    </div> -->
+                                </form>
                             </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -91,10 +200,10 @@
             <!-- Welcome State -->
             <div class="flex-1 flex items-center justify-center">
                 <div class="text-center space-y-4">
-                    <h2 class="text-2xl font-bold text-gray-900">Welcome to English Learning Assistant!</h2>
-                    <p class="text-gray-600">Create a new chat to start practicing your English.</p>
+                    <h2 class="text-2xl font-bold text-gray-900">Welcome to English Conversation Practice!</h2>
+                    <p class="text-gray-600">Practice real conversations with AI-generated dialogues on topics you choose.</p>
                     <button id="welcomeNewChat" class="mt-4 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">
-                        Create New Chat
+                        Start Practicing
                     </button>
                 </div>
             </div>
@@ -124,80 +233,723 @@
         </div>
     </div>
 </div>
+
+<!-- Loading Modal -->
+<div id="loadingModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+    <div class="relative top-1/2 transform -translate-y-1/2 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="text-center">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            <h3 class="text-lg font-medium text-gray-900 mt-4">Generating Conversation...</h3>
+            <p class="text-gray-600 mt-2">Please wait while AI creates your dialogue.</p>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 {{ block.super }}
-<script src="{% static 'teaching/js/chat.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    const chatContainer = document.getElementById('chatContainer');
     const newChatBtn = document.getElementById('newChat');
     const welcomeNewChatBtn = document.getElementById('welcomeNewChat');
     const newChatModal = document.getElementById('newChatModal');
     const cancelNewChatBtn = document.getElementById('cancelNewChat');
-    const messageForm = document.getElementById('messageForm');
+    const loadingModal = document.getElementById('loadingModal');
+    const topicBtns = document.querySelectorAll('.topic-btn');
+    const customTopicInput = document.getElementById('customTopic');
+    const generateBtn = document.getElementById('generateConversation');
+    const micButton = document.getElementById('micButton');
+    const textForm = document.getElementById('textForm');
+    const recordingStatus = document.getElementById('recordingStatus');
+    const statusMessage = document.getElementById('statusMessage');
+    const expectedText = document.getElementById('expectedText');
+    const playExpectedBtn = document.getElementById('playExpectedBtn');
+    
+    let isRecording = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let currentExpectedResponse = '';
+    let recordingStartTime = null;
+    let minRecordingTime = 2000; // Minimum 2 seconds
 
-    function showNewChatModal() {
-        newChatModal.classList.remove('hidden');
+    // Modal functions
+    function showModal(modal) {
+        modal.classList.remove('hidden');
+    }
+    
+    function hideModal(modal) {
+        modal.classList.add('hidden');
     }
 
-    function hideNewChatModal() {
-        newChatModal.classList.add('hidden');
-    }
-
-    if (newChatBtn) newChatBtn.addEventListener('click', showNewChatModal);
-    if (welcomeNewChatBtn) welcomeNewChatBtn.addEventListener('click', showNewChatModal);
-    if (cancelNewChatBtn) cancelNewChatBtn.addEventListener('click', hideNewChatModal);
+    // Event listeners for modals
+    if (newChatBtn) newChatBtn.addEventListener('click', () => showModal(newChatModal));
+    if (welcomeNewChatBtn) welcomeNewChatBtn.addEventListener('click', () => showModal(newChatModal));
+    if (cancelNewChatBtn) cancelNewChatBtn.addEventListener('click', () => hideModal(newChatModal));
 
     // Close modal when clicking outside
-    newChatModal.addEventListener('click', (e) => {
-        if (e.target === newChatModal) {
-            hideNewChatModal();
-        }
+    [newChatModal, loadingModal].forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                hideModal(modal);
+            }
+        });
     });
 
-    // Handle form submission
-    if (messageForm) {
-        messageForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const messageInput = document.getElementById('messageInput');
-            const content = messageInput.value.trim();
-            if (content) {
-                const formData = new FormData(messageForm);
-                fetch(messageForm.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (window.chatRoom) {
-                        window.chatRoom.appendMessage(data.user_message);
-                        window.chatRoom.appendMessage(data.assistant_message);
-                    }
-                    messageInput.value = '';
-                })
-                .catch(error => console.error('Error:', error));
+    // Topic selection
+    topicBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const topic = btn.dataset.topic;
+            customTopicInput.value = topic;
+            generateConversation(topic);
+        });
+    });
+
+    if (generateBtn) {
+        generateBtn.addEventListener('click', () => {
+            const topic = customTopicInput.value.trim();
+            if (topic) {
+                generateConversation(topic);
             }
         });
     }
 
-    // Initialize chat if container exists
-    const chatContainer = document.getElementById('chatContainer');
-    if (chatContainer) {
-        const chatConfig = {
-            roomId: chatContainer.dataset.roomId,
-            csrfToken: chatContainer.dataset.csrfToken,
-            urls: {
-                sendMessage: chatContainer.dataset.sendMessageUrl,
-                newChat: chatContainer.dataset.newChatUrl,
-                wsUrl: chatContainer.dataset.wsUrl
+    if (customTopicInput) {
+        customTopicInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const topic = customTopicInput.value.trim();
+                if (topic) {
+                    generateConversation(topic);
+                }
             }
-        };
-        window.chatRoom = new ChatRoom(chatConfig);
+        });
     }
+
+    // Generate conversation function
+    async function generateConversation(topic) {
+        if (!chatContainer) return;
+        
+        showModal(loadingModal);
+        
+        try {
+            const response = await fetch(chatContainer.dataset.generateTopicUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': chatContainer.dataset.csrfToken
+                },
+                body: JSON.stringify({ topic: topic })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Refresh the page to show the new conversation
+                window.location.reload();
+            } else {
+                showStatus('Error: ' + (data.error || 'Failed to generate conversation'), 'error');
+            }
+        } catch (error) {
+            console.error('Error generating conversation:', error);
+            showStatus('Error: Failed to generate conversation', 'error');
+        } finally {
+            hideModal(loadingModal);
+        }
+    }
+
+    // Audio recording
+    if (micButton) {
+        micButton.addEventListener('click', toggleRecording);
+    }
+
+    // Play expected response button
+    if (playExpectedBtn) {
+        playExpectedBtn.addEventListener('click', () => {
+            if (currentExpectedResponse) {
+                speakText(currentExpectedResponse);
+            }
+        });
+    }
+
+    async function toggleRecording() {
+        if (!isRecording) {
+            try {
+                // Request higher quality audio
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        sampleRate: 44100,
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+                
+                // Use better audio format
+                const options = {
+                    mimeType: 'audio/webm;codecs=opus',
+                    audioBitsPerSecond: 128000
+                };
+                
+                // Fallback to default if webm not supported
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options.mimeType = 'audio/wav';
+                }
+                
+                mediaRecorder = new MediaRecorder(stream, options);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType });
+                    
+                    // Check if we have enough audio data
+                    if (audioBlob.size < 1000) { // Less than 1KB is probably too short
+                        showStatus('Recording too short. Please try again and speak longer.', 'warning');
+                        stream.getTracks().forEach(track => track.stop());
+                        return;
+                    }
+                    
+                    await sendAudioMessage(audioBlob);
+                    
+                    // Stop the stream
+                    stream.getTracks().forEach(track => track.stop());
+                };
+                
+                mediaRecorder.onerror = (event) => {
+                    console.error('MediaRecorder error:', event.error);
+                    showStatus('Recording error. Please try again.', 'error');
+                    isRecording = false;
+                    micButton.classList.remove('bg-red-500', 'text-white');
+                    recordingStatus.classList.add('hidden');
+                    stream.getTracks().forEach(track => track.stop());
+                };
+                
+                // Show countdown before starting recording
+                let countdown = 3;
+                showStatus(`🎤 Get ready... Recording will start in ${countdown}`, 'info');
+                
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    if (countdown > 0) {
+                        showStatus(`🎤 Get ready... Recording will start in ${countdown}`, 'info');
+                    } else {
+                        clearInterval(countdownInterval);
+                        if (isRecording) {  // Make sure user didn't cancel
+                            // Start recording with data collection every 100ms
+                            mediaRecorder.start(100);
+                            micButton.classList.add('bg-red-500', 'text-white');
+                            recordingStatus.classList.remove('hidden');
+                            
+                            // Update recording status text to be more helpful
+                            if (recordingStatus) {
+                                recordingStatus.innerHTML = `
+                                    <div class="inline-flex items-center space-x-2 bg-red-100 text-red-800 px-4 py-2 rounded-lg">
+                                        <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                                        <span>🎤 Recording... Speak your full response, then click to stop</span>
+                                    </div>
+                                `;
+                            }
+                            
+                            showStatus('🎤 Now recording! Say: "' + (currentExpectedResponse || 'your response') + '"', 'success');
+                            recordingStartTime = Date.now(); // Track when recording actually started
+                        }
+                    }
+                }, 1000);
+                
+                isRecording = true;
+                
+            } catch (error) {
+                console.error('Error accessing microphone:', error);
+                if (error.name === 'NotAllowedError') {
+                    showStatus('Microphone access denied. Please allow microphone permissions.', 'error');
+                } else if (error.name === 'NotFoundError') {
+                    showStatus('No microphone found. Please check your audio devices.', 'error');
+                } else {
+                    showStatus('Error: Could not access microphone', 'error');
+                }
+            }
+        } else {
+            // User clicked to stop recording
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                // Check if enough time has passed for a meaningful recording
+                const recordingDuration = recordingStartTime ? Date.now() - recordingStartTime : 0;
+                
+                if (recordingDuration < minRecordingTime) {
+                    const remainingTime = Math.ceil((minRecordingTime - recordingDuration) / 1000);
+                    showStatus(`⏱️ Please keep speaking for ${remainingTime} more second(s) for better accuracy`, 'warning');
+                    return;
+                }
+                
+                // Add a small delay to ensure we capture the end of speech
+                setTimeout(() => {
+                    if (mediaRecorder && mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                    }
+                    isRecording = false;
+                    micButton.classList.remove('bg-red-500', 'text-white');
+                    recordingStatus.classList.add('hidden');
+                    showStatus('🔄 Processing your speech...', 'info');
+                    recordingStartTime = null;
+                }, 500); // Increased to 500ms delay to capture the end of speech
+            } else {
+                // User clicked to cancel during countdown
+                isRecording = false;
+                micButton.classList.remove('bg-red-500', 'text-white');
+                recordingStatus.classList.add('hidden');
+                showStatus('Recording cancelled', 'info');
+            }
+        }
+    }
+
+    // Send audio message
+    async function sendAudioMessage(audioBlob) {
+        if (!chatContainer) return;
+        
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.wav');
+        
+        try {
+            const response = await fetch(chatContainer.dataset.sendMessageUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': chatContainer.dataset.csrfToken
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            handleMessageResponse(data);
+        } catch (error) {
+            console.error('Error sending audio:', error);
+            showStatus('Error: Failed to send audio message', 'error');
+        }
+    }
+
+    // Text form submission
+    if (textForm) {
+        textForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const textInput = document.getElementById('textInput');
+            const content = textInput.value.trim();
+            
+            if (!content || !chatContainer) return;
+            
+            try {
+                const response = await fetch(chatContainer.dataset.sendMessageUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': chatContainer.dataset.csrfToken
+                    },
+                    body: JSON.stringify({ content: content })
+                });
+                
+                const data = await response.json();
+                handleMessageResponse(data);
+                textInput.value = '';
+            } catch (error) {
+                console.error('Error sending text:', error);
+                showStatus('Error: Failed to send message', 'error');
+            }
+        });
+    }
+
+    // Handle message response
+    function handleMessageResponse(data) {
+        if (data.success) {
+            // Add messages to chat
+            if (data.user_message) {
+                addMessageToChat(data.user_message);
+            }
+            if (data.assistant_message) {
+                addMessageToChat(data.assistant_message);
+            }
+            if (data.feedback_message) {
+                addMessageToChat(data.feedback_message);
+            }
+            if (data.continuation_message) {
+                addMessageToChat(data.continuation_message);
+            }
+            
+            // Show detailed word analysis as separate bubble if available
+            if (data.word_comparison) {
+                addWordAnalysisToChat(data.word_comparison, data.user_message.content, data.expected_response || data.previous_expected);
+            }
+            
+            // Update expected response
+            if (data.expected_response) {
+                currentExpectedResponse = data.expected_response;
+                if (expectedText) {
+                    expectedText.textContent = data.expected_response;
+                }
+            }
+            
+            // Handle conversation completion
+            if (data.conversation_completed) {
+                showStatus('🎉 Conversation completed! Generate a new conversation to continue practicing.', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else if (data.needs_retry) {
+                showStatus('Try again! You need at least 70% accuracy to continue.', 'warning');
+            } else {
+                showStatus('Great! Moving to the next exchange.', 'success');
+            }
+        } else {
+            showStatus('Error: ' + (data.error || 'Unknown error'), 'error');
+        }
+    }
+
+    // Add message to chat
+    function addMessageToChat(message) {
+        const chatMessages = document.getElementById('chatMessages');
+        if (!chatMessages) return;
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${message.role === 'user' ? 'justify-end' : ''}`;
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = `max-w-2xl ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white border'} rounded-lg p-4 shadow`;
+        
+        const textP = document.createElement('p');
+        textP.className = 'whitespace-pre-line';
+        textP.textContent = message.content;
+        contentDiv.appendChild(textP);
+        
+        if (message.spelling_score !== undefined && message.spelling_score !== null) {
+            const scoreDiv = document.createElement('div');
+            scoreDiv.className = `mt-2 text-sm ${message.role === 'user' ? 'text-blue-100' : 'text-gray-600'}`;
+            
+            const scoreSpan = document.createElement('div');
+            scoreSpan.className = 'flex items-center space-x-2';
+            scoreSpan.innerHTML = `
+                <span>Score: ${message.spelling_score}%</span>
+                <span class="${message.spelling_score >= 70 ? 'text-green-500' : 'text-red-500'}">${message.spelling_score >= 70 ? '✓' : '✗'}</span>
+            `;
+            
+            scoreDiv.appendChild(scoreSpan);
+            contentDiv.appendChild(scoreDiv);
+        }
+        
+        messageDiv.appendChild(contentDiv);
+        chatMessages.appendChild(messageDiv);
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Show status message
+    function showStatus(message, type = 'info') {
+        if (!statusMessage) return;
+        
+        statusMessage.textContent = message;
+        statusMessage.className = `mb-4 p-3 rounded-lg ${
+            type === 'error' ? 'bg-red-100 text-red-800' :
+            type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+            type === 'success' ? 'bg-green-100 text-green-800' :
+            'bg-blue-100 text-blue-800'
+        }`;
+        statusMessage.classList.remove('hidden');
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            statusMessage.classList.add('hidden');
+        }, 5000);
+    }
+
+    // Text-to-speech function
+    function speakText(text) {
+        if ('speechSynthesis' in window) {
+            // Cancel any ongoing speech
+            speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.8; // Slightly slower for learning
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            // Prioritize American English voices
+            const voices = speechSynthesis.getVoices();
+            
+            // Try to find FEMALE American English voices in order of preference
+            let selectedVoice = 
+                // 1. American English explicitly female voices
+                voices.find(voice => 
+                    voice.lang === 'en-US' && 
+                    (voice.name.toLowerCase().includes('female') || 
+                     voice.name.toLowerCase().includes('woman') ||
+                     voice.name.toLowerCase().includes('girl'))
+                ) ||
+                // 2. American English female names
+                voices.find(voice => 
+                    voice.lang === 'en-US' && 
+                    (voice.name.toLowerCase().includes('samantha') ||
+                     voice.name.toLowerCase().includes('susan') ||
+                     voice.name.toLowerCase().includes('karen') ||
+                     voice.name.toLowerCase().includes('zira') ||
+                     voice.name.toLowerCase().includes('cortana') ||
+                     voice.name.toLowerCase().includes('hazel') ||
+                     voice.name.toLowerCase().includes('sarah') ||
+                     voice.name.toLowerCase().includes('catherine') ||
+                     voice.name.toLowerCase().includes('serena') ||
+                     voice.name.toLowerCase().includes('julie') ||
+                     voice.name.toLowerCase().includes('allison') ||
+                     voice.name.toLowerCase().includes('ava') ||
+                     voice.name.toLowerCase().includes('nora') ||
+                     voice.name.toLowerCase().includes('joanna') ||
+                     voice.name.toLowerCase().includes('kimberly') ||
+                     voice.name.toLowerCase().includes('salli') ||
+                     voice.name.toLowerCase().includes('ivy'))
+                ) ||
+                // 3. Any female voice (any English variant)
+                voices.find(voice => 
+                    voice.lang.startsWith('en') &&
+                    !voice.name.toLowerCase().includes('british') &&
+                    !voice.lang.includes('GB') &&
+                    (voice.name.toLowerCase().includes('female') || 
+                     voice.name.toLowerCase().includes('woman') ||
+                     voice.name.toLowerCase().includes('girl') ||
+                     voice.name.toLowerCase().includes('samantha') ||
+                     voice.name.toLowerCase().includes('susan') ||
+                     voice.name.toLowerCase().includes('karen') ||
+                     voice.name.toLowerCase().includes('zira') ||
+                     voice.name.toLowerCase().includes('hazel') ||
+                     voice.name.toLowerCase().includes('sarah') ||
+                     voice.name.toLowerCase().includes('julie') ||
+                     voice.name.toLowerCase().includes('allison') ||
+                     voice.name.toLowerCase().includes('ava') ||
+                     voice.name.toLowerCase().includes('nora') ||
+                     voice.name.toLowerCase().includes('serena'))
+                ) ||
+                // 4. American English voice (any gender)
+                voices.find(voice => voice.lang === 'en-US') ||
+                // 5. General English voices (avoid British/male if possible)
+                voices.find(voice => 
+                    voice.lang.startsWith('en') && 
+                    !voice.name.toLowerCase().includes('british') &&
+                    !voice.name.toLowerCase().includes('uk') &&
+                    !voice.lang.includes('GB') &&
+                    !voice.name.toLowerCase().includes('male') &&
+                    !voice.name.toLowerCase().includes('man') &&
+                    !voice.name.toLowerCase().includes('david') &&
+                    !voice.name.toLowerCase().includes('mark') &&
+                    !voice.name.toLowerCase().includes('paul') &&
+                    !voice.name.toLowerCase().includes('richard')
+                ) ||
+                // 6. Fallback to any English voice
+                voices.find(voice => voice.lang.startsWith('en'));
+            
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+                console.log('Using voice:', selectedVoice.name, selectedVoice.lang);
+            }
+            
+            speechSynthesis.speak(utterance);
+        } else {
+            showStatus('Text-to-speech not supported in this browser', 'warning');
+        }
+    }
+
+    // Add word analysis as a separate chat bubble
+    function addWordAnalysisToChat(wordComparison, userInput, expectedResponse) {
+        const chatMessages = document.getElementById('chatMessages');
+        if (!chatMessages || !wordComparison) return;
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'flex justify-center mb-4';
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'max-w-4xl bg-yellow-50 border border-yellow-200 rounded-lg p-4 shadow-sm';
+        
+        // Title with play button
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'flex items-center justify-between mb-3';
+        
+        const titleText = document.createElement('div');
+        titleText.className = 'text-lg font-semibold text-yellow-800';
+        titleText.innerHTML = '🔍 Word Analysis';
+        
+        const playButton = document.createElement('button');
+        playButton.className = 'bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-sm font-medium flex items-center space-x-1';
+        playButton.innerHTML = '🔊 Play Correct';
+        playButton.onclick = () => speakText(expectedResponse);
+        
+        titleDiv.appendChild(titleText);
+        titleDiv.appendChild(playButton);
+        contentDiv.appendChild(titleDiv);
+        
+        // Word comparison visual
+        if (wordComparison.word_analysis && wordComparison.word_analysis.length > 0) {
+            const wordsDiv = document.createElement('div');
+            wordsDiv.className = 'mb-4';
+            
+            const wordsTitle = document.createElement('div');
+            wordsTitle.className = 'text-sm font-medium text-gray-700 mb-2';
+            wordsTitle.textContent = 'Word-by-word comparison:';
+            wordsDiv.appendChild(wordsTitle);
+            
+            const wordsContainer = document.createElement('div');
+            wordsContainer.className = 'flex flex-wrap gap-2 justify-center';
+            
+            wordComparison.word_analysis.forEach(word => {
+                const wordSpan = document.createElement('span');
+                wordSpan.className = `px-3 py-2 rounded-lg text-sm font-medium cursor-help `;
+                
+                if (word.status === 'correct') {
+                    wordSpan.className += 'bg-green-100 text-green-800 border-2 border-green-300';
+                    wordSpan.textContent = word.user_word;
+                    wordSpan.title = '✅ Perfect match!';
+                } else if (word.status === 'close') {
+                    wordSpan.className += 'bg-orange-100 text-orange-800 border-2 border-orange-300';
+                    wordSpan.textContent = word.user_word;
+                    wordSpan.title = `⚠️ Close match (${word.similarity}% similar to "${word.expected_word}")`;
+                } else {
+                    wordSpan.className += 'bg-red-100 text-red-800 border-2 border-red-300';
+                    wordSpan.textContent = word.user_word;
+                    wordSpan.title = `❌ Should be "${word.expected_word}"`;
+                }
+                
+                wordsContainer.appendChild(wordSpan);
+            });
+            
+            wordsDiv.appendChild(wordsContainer);
+            contentDiv.appendChild(wordsDiv);
+        }
+        
+        // Summary stats
+        const statsDiv = document.createElement('div');
+        statsDiv.className = 'grid grid-cols-2 md:grid-cols-4 gap-4 text-sm bg-white rounded-lg p-3 border';
+        
+        const stats = [
+            { label: 'Correct', value: wordComparison.correct_words, color: 'text-green-600', icon: '✅' },
+            { label: 'Incorrect', value: wordComparison.incorrect_words?.length || 0, color: 'text-red-600', icon: '❌' },
+            { label: 'Missing', value: wordComparison.missing_words?.length || 0, color: 'text-orange-600', icon: '⚠️' },
+            { label: 'Extra', value: wordComparison.extra_words?.length || 0, color: 'text-purple-600', icon: '➕' }
+        ];
+        
+        stats.forEach(stat => {
+            const statDiv = document.createElement('div');
+            statDiv.className = 'text-center';
+            
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'text-xl mb-1';
+            iconDiv.textContent = stat.icon;
+            
+            const valueDiv = document.createElement('div');
+            valueDiv.className = `text-lg font-bold ${stat.color}`;
+            valueDiv.textContent = stat.value;
+            
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'text-gray-600 text-xs';
+            labelDiv.textContent = stat.label;
+            
+            statDiv.appendChild(iconDiv);
+            statDiv.appendChild(valueDiv);
+            statDiv.appendChild(labelDiv);
+            statsDiv.appendChild(statDiv);
+        });
+        
+        contentDiv.appendChild(statsDiv);
+        
+        messageDiv.appendChild(contentDiv);
+        chatMessages.appendChild(messageDiv);
+        
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Initialize text-to-speech voices
+    function initializeTTS() {
+        if ('speechSynthesis' in window) {
+            // Load voices
+            speechSynthesis.getVoices();
+            
+            // Some browsers need this event
+            speechSynthesis.addEventListener('voiceschanged', () => {
+                console.log('TTS voices loaded');
+                listAvailableVoices(); // Debug available voices
+            });
+            
+            // Also try to list voices immediately
+            setTimeout(listAvailableVoices, 1000);
+        }
+    }
+    
+    // Debug function to see available voices
+    function listAvailableVoices() {
+        const voices = speechSynthesis.getVoices();
+        console.log('🎤 Available voices:');
+        
+        const femaleNames = ['female', 'woman', 'girl', 'samantha', 'susan', 'karen', 'zira', 'cortana', 'hazel', 'sarah', 'catherine', 'serena', 'julie', 'allison', 'ava', 'nora', 'joanna', 'kimberly', 'salli', 'ivy'];
+        const maleNames = ['male', 'man', 'boy', 'david', 'mark', 'paul', 'richard', 'alex', 'brian', 'kevin', 'daniel'];
+        
+        voices.forEach((voice, index) => {
+            const isUS = voice.lang === 'en-US' || voice.lang.startsWith('en-US');
+            const isBritish = voice.lang.includes('GB') || voice.name.toLowerCase().includes('british') || voice.name.toLowerCase().includes('uk');
+            const isFemale = femaleNames.some(name => voice.name.toLowerCase().includes(name));
+            const isMale = maleNames.some(name => voice.name.toLowerCase().includes(name));
+            
+            let flags = '';
+            if (isUS) flags += '🇺🇸';
+            if (isBritish) flags += '🇬🇧';
+            if (isFemale) flags += '👩';
+            if (isMale) flags += '👨';
+            
+            console.log(`${index}: ${voice.name} (${voice.lang}) ${flags}`);
+        });
+        
+        // Show which voice would be selected using the same logic as speakText
+        const testVoices = voices;
+        let selectedVoice = 
+            // 1. American English explicitly female voices
+            testVoices.find(voice => 
+                voice.lang === 'en-US' && 
+                (voice.name.toLowerCase().includes('female') || 
+                 voice.name.toLowerCase().includes('woman') ||
+                 voice.name.toLowerCase().includes('girl'))
+            ) ||
+            // 2. American English female names
+            testVoices.find(voice => 
+                voice.lang === 'en-US' && 
+                femaleNames.some(name => voice.name.toLowerCase().includes(name))
+            ) ||
+            // 3. Any female voice (any English variant)
+            testVoices.find(voice => 
+                voice.lang.startsWith('en') &&
+                !voice.name.toLowerCase().includes('british') &&
+                !voice.lang.includes('GB') &&
+                femaleNames.some(name => voice.name.toLowerCase().includes(name))
+            ) ||
+            // 4. American English voice (any gender)
+             testVoices.find(voice => voice.lang === 'en-US');
+        
+        if (selectedVoice) {
+            const isFemale = femaleNames.some(name => selectedVoice.name.toLowerCase().includes(name));
+            console.log(`🎯 Selected voice: ${selectedVoice.name} (${selectedVoice.lang}) ${isFemale ? '👩' : '👨'}`);
+        } else {
+            console.log('⚠️ No suitable voice found, will use default');
+        }
+    }
+    
+    // Initialize expected response if available
+    {% if current_session and not current_session.is_completed %}
+    {% if current_expected_response %}
+    if (expectedText) {
+        currentExpectedResponse = "{{ current_expected_response|escapejs }}";
+        expectedText.textContent = currentExpectedResponse;
+    }
+    {% endif %}
+    {% endif %}
+    
+    // Initialize TTS
+    initializeTTS();
 });
 </script>
 {% endblock %}
