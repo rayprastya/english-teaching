@@ -237,20 +237,14 @@ class ChatRoom {
     updateProgress(currentIndex, totalExchanges) {
         const progressContainer = document.querySelector('.flex.items-center.space-x-2.text-sm.text-gray-600');
         if (progressContainer) {
-            // Find or create the progress numbers container
-            let progressNumbers = progressContainer.querySelector('.flex.items-center');
-            if (!progressNumbers) {
-                progressNumbers = document.createElement('div');
-                progressNumbers.className = 'flex items-center';
-                progressContainer.insertBefore(progressNumbers, progressContainer.querySelector('.w-24'));
+            // Update the numbers using the existing structure
+            const currentSpan = progressContainer.querySelector('.font-medium');
+            const totalSpan = progressContainer.querySelector('.flex.items-center span:last-child');
+            
+            if (currentSpan && totalSpan) {
+                currentSpan.textContent = currentIndex + 1;
+                totalSpan.textContent = totalExchanges;
             }
-
-            // Update the numbers with consistent formatting
-            progressNumbers.innerHTML = `
-                <span class="font-medium">${currentIndex + 1}</span>
-                <span class="mx-1">/</span>
-                <span>${totalExchanges}</span>
-            `;
 
             // Update the progress bar
             const progressBar = progressContainer.querySelector('.bg-blue-500');
