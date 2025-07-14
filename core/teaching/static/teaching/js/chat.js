@@ -238,11 +238,13 @@ class ChatRoom {
         const progressContainer = document.querySelector('.flex.items-center.space-x-2.text-sm.text-gray-600');
         if (progressContainer) {
             // Update the numbers
-            const currentSpan = progressContainer.querySelector('.font-medium');
-            const totalSpan = progressContainer.querySelectorAll('span')[2];
-            if (currentSpan && totalSpan) {
-                currentSpan.textContent = currentIndex + 1;
-                totalSpan.textContent = totalExchanges;
+            const progressNumbers = progressContainer.querySelector('.flex.items-center');
+            if (progressNumbers) {
+                progressNumbers.innerHTML = `
+                    <span class="font-medium">${currentIndex + 1}</span>
+                    <span class="mx-1">/</span>
+                    <span>${totalExchanges}</span>
+                `;
             }
 
             // Update the progress bar
