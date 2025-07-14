@@ -236,22 +236,25 @@ class ChatRoom {
 
     updateProgress(currentIndex, totalExchanges) {
         const progressContainer = document.querySelector('.flex.items-center.space-x-2.text-sm.text-gray-600');
-        if (progressContainer) {
-            // Update the numbers using the existing structure
-            const currentSpan = progressContainer.querySelector('.font-medium');
-            const totalSpan = progressContainer.querySelector('.flex.items-center span:last-child');
-            
-            if (currentSpan && totalSpan) {
-                currentSpan.textContent = currentIndex + 1;
-                totalSpan.textContent = totalExchanges;
-            }
+        if (!progressContainer) return;
 
-            // Update the progress bar
-            const progressBar = progressContainer.querySelector('.bg-blue-500');
-            if (progressBar) {
-                const percentage = ((currentIndex + 1) / totalExchanges) * 100;
-                progressBar.style.width = `${percentage}%`;
-            }
+        // Get the inner flex container that holds the numbers
+        const numbersContainer = progressContainer.querySelector('.flex.items-center');
+        if (!numbersContainer) return;
+
+        // Update the numbers
+        const spans = numbersContainer.getElementsByTagName('span');
+        if (spans.length === 3) {
+            spans[0].textContent = currentIndex + 1;  // Current index (font-medium)
+            spans[1].textContent = '/';  // Separator (mx-1)
+            spans[2].textContent = totalExchanges;  // Total (font-normal)
+        }
+
+        // Update the progress bar
+        const progressBar = progressContainer.querySelector('.bg-blue-500');
+        if (progressBar) {
+            const percentage = ((currentIndex + 1) / totalExchanges) * 100;
+            progressBar.style.width = `${percentage}%`;
         }
     }
 
