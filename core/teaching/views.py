@@ -547,7 +547,7 @@ def login_view(request):
             
             if user is not None:
                 login(request, user)
-                return redirect('room')
+                return redirect('room_list')
             else:
                 return render(request, 'login.html', {'error_message': 'Invalid email or password'})
         except User.DoesNotExist:
@@ -592,7 +592,7 @@ def signup_view(request):
             )
             
             login(request, user)
-            return redirect('room')
+            return redirect('room_list')
         except Exception as e:
             return render(request, 'signup.html', {'error_message': 'An error occurred while creating your account'})
     
