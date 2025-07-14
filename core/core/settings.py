@@ -27,9 +27,15 @@ SECRET_KEY = 'django-insecure-6k(4)1tok#d6a!4!eza*iy8cai58$f0k=ax2$hh=(f^-^svf=)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-CSRF_TRUSTED_ORIGINS = ['https://devosproj.duckdns.org']
+CSRF_TRUSTED_ORIGINS = ['https://devosproj.duckdns.org', 'http://localhost', 'http://127.0.0.1', 'https://devosproj.duckdns.org']
 
 ALLOWED_HOSTS = ['devosproj.duckdns.org', '145.79.12.81', 'localhost', '127.0.0.1']
+
+# CSRF settings
+CSRF_COOKIE_SECURE = False  # Set to False for development, True for production
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access to CSRF cookie
+CSRF_USE_SESSIONS = False  # Use cookies instead of sessions for CSRF
+CSRF_COOKIE_SAMESITE = 'Lax'  # Allow cross-site requests
 
 
 # Application definition
@@ -164,5 +170,5 @@ CHANNEL_LAYERS = {
 # Security settings for HTTPS
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = False  # Let Nginx handle the SSL redirect
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = False  # Set to False for development, True for production
+CSRF_COOKIE_SECURE = False  # Set to False for development, True for production
