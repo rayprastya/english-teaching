@@ -34,5 +34,8 @@ RUN mkdir -p static media staticfiles
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
+# Collect static files
+RUN python manage.py migrate
+
 # Run gunicorn with whitenoise
 CMD ["gunicorn", "--bind", "0.0.0.0:3000", "--workers", "3", "core.wsgi:application"]
