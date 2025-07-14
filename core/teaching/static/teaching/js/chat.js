@@ -237,15 +237,20 @@ class ChatRoom {
     updateProgress(currentIndex, totalExchanges) {
         const progressContainer = document.querySelector('.flex.items-center.space-x-2.text-sm.text-gray-600');
         if (progressContainer) {
-            // Update the numbers
-            const progressNumbers = progressContainer.querySelector('.flex.items-center');
-            if (progressNumbers) {
-                progressNumbers.innerHTML = `
-                    <span class="font-medium">${currentIndex + 1}</span>
-                    <span class="mx-1">/</span>
-                    <span>${totalExchanges}</span>
-                `;
+            // Find or create the progress numbers container
+            let progressNumbers = progressContainer.querySelector('.flex.items-center');
+            if (!progressNumbers) {
+                progressNumbers = document.createElement('div');
+                progressNumbers.className = 'flex items-center';
+                progressContainer.insertBefore(progressNumbers, progressContainer.querySelector('.w-24'));
             }
+
+            // Update the numbers with consistent formatting
+            progressNumbers.innerHTML = `
+                <span class="font-medium">${currentIndex + 1}</span>
+                <span class="mx-1">/</span>
+                <span>${totalExchanges}</span>
+            `;
 
             // Update the progress bar
             const progressBar = progressContainer.querySelector('.bg-blue-500');
@@ -287,20 +292,23 @@ class ChatRoom {
             }
             if (data.continuation_message) {
                 this.appendMessage(data.continuation_message);
-                // Update progress bar
-                if (data.current_exchange_index !== undefined && data.total_exchanges) {
-                    this.updateProgress(data.current_exchange_index, data.total_exchanges);
-                }
-                // Update expected response
-                if (data.expected_response) {
-                    const expectedText = document.getElementById('expectedText');
-                    if (expectedText) {
-                        expectedText.textContent = data.expected_response;
-                    }
+            }
+
+            // Update progress bar if we have the data
+            if (data.current_exchange_index !== undefined && data.total_exchanges) {
+                this.updateProgress(data.current_exchange_index, data.total_exchanges);
+            }
+
+            // Update expected response if provided
+            if (data.expected_response) {
+                const expectedText = document.getElementById('expectedText');
+                if (expectedText) {
+                    expectedText.textContent = data.expected_response;
                 }
             }
+
+            // Handle conversation completion
             if (data.conversation_completed) {
-                // Handle conversation completion
                 const topicSelection = document.getElementById('topicSelection');
                 if (topicSelection) {
                     topicSelection.style.display = 'block';
