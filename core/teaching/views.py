@@ -2,7 +2,7 @@ from django.views import View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import Room, Message, ConversationTopic, Dialogue, ConversationSession
+from .models import Room, Message, ConversationTopic, Dialogue, ConversationSession, UserProgress
 from core.utils.whisper import transcribe_audio
 from core.utils.conversation_ai import ConversationAI
 import json
@@ -18,11 +18,18 @@ class RoomView(LoginRequiredMixin, View):
     template_name = 'room.html'
 
     def get(self, request, room_id=None):
+        # Get or create user progress
+        user_progress, created = UserProgress.objects.get_or_create(user=request.user)
+        
         # Get all rooms for the user
         user_rooms = Room.objects.filter(user=request.user).order_by('-created_at')
         
-        # Get all available conversation topics
-        topics = ConversationTopic.objects.filter(is_active=True).order_by('name')
+        # Get available conversation topics based on user progress
+        available_levels = user_progress.get_available_difficulty_levels()
+        topics = ConversationTopic.objects.filter(
+            is_active=True,
+            difficulty_level__in=available_levels
+        ).order_by('difficulty_level', 'name')
         
         if room_id:
             # Get specific room
@@ -44,25 +51,26 @@ class RoomView(LoginRequiredMixin, View):
 
         # Get current expected response if there's an active session
         current_expected_response = None
-        if current_session and not current_session.is_completed:
+        if current_session:
             current_exchange = current_session.get_current_exchange()
             if current_exchange:
                 current_expected_response = current_exchange['user_should_say']
 
-        context = {
+        return render(request, self.template_name, {
             'room': room,
             'messages': messages,
-            'user_rooms': user_rooms,
+            'rooms': user_rooms,
             'topics': topics,
             'current_session': current_session,
             'current_expected_response': current_expected_response,
-        }
-        return render(request, self.template_name, context)
-    
+            'user_progress': user_progress,
+        })
+
     def post(self, request):
+        # Create new room
         title = request.POST.get('title', 'New Chat')
         room = Room.objects.create(user=request.user, title=title)
-        return redirect('room_detail', room_id=room.id)
+        return redirect('room', room_id=room.id)
 
 class TopicView(LoginRequiredMixin, View):
     """Handle topic-related operations"""
@@ -70,6 +78,9 @@ class TopicView(LoginRequiredMixin, View):
     def post(self, request, room_id):
         """Generate a new conversation for a selected topic"""
         room = get_object_or_404(Room, id=room_id, user=request.user)
+        
+        # Get or create user progress
+        user_progress, created = UserProgress.objects.get_or_create(user=request.user)
         
         try:
             data = json.loads(request.body)
@@ -81,12 +92,22 @@ class TopicView(LoginRequiredMixin, View):
             # Get or create the topic
             topic, created = ConversationTopic.objects.get_or_create(
                 name=topic_name,
-                defaults={'description': f'Conversation about {topic_name}'}
+                defaults={
+                    'description': f'Conversation about {topic_name}',
+                    'difficulty_level': user_progress.current_level
+                }
             )
             
-            # Generate new dialogue using AI
+            # Check if user has access to this topic's difficulty level
+            if topic.difficulty_level not in user_progress.get_available_difficulty_levels():
+                return JsonResponse({
+                    'error': f'You need to complete more conversations to access {topic.get_difficulty_level_display()} level topics'
+                }, status=400)
+            
+            # Generate new dialogue using AI with difficulty-appropriate parameters
             ai = ConversationAI()
-            exchanges = ai.generate_conversation(topic_name, num_exchanges=7)
+            num_exchanges = self._get_exchanges_for_difficulty(topic.difficulty_level)
+            exchanges = ai.generate_conversation(topic_name, num_exchanges=num_exchanges, difficulty=topic.difficulty_level)
             
             # Create new dialogue
             dialogue = Dialogue.objects.create(
@@ -124,7 +145,8 @@ class TopicView(LoginRequiredMixin, View):
                     'bot_message': first_exchange['bot_says'],
                     'expected_response': first_exchange['user_should_say'],
                     'exchange_number': first_exchange['exchange_number'],
-                    'total_exchanges': dialogue.total_exchanges
+                    'total_exchanges': dialogue.total_exchanges,
+                    'difficulty_level': topic.get_difficulty_level_display()
                 })
             else:
                 return JsonResponse({'error': 'Failed to generate conversation'}, status=500)
@@ -132,6 +154,15 @@ class TopicView(LoginRequiredMixin, View):
         except Exception as e:
             print(f"Error in TopicView: {str(e)}")
             return JsonResponse({'error': 'Failed to generate conversation'}, status=500)
+    
+    def _get_exchanges_for_difficulty(self, difficulty_level):
+        """Get number of exchanges based on difficulty level"""
+        if difficulty_level == 'easy':
+            return 5  # Easy: 5 exchanges
+        elif difficulty_level == 'medium':
+            return 7  # Medium: 7 exchanges
+        else:  # hard
+            return 10  # Hard: 10 exchanges
 
 class MessageView(LoginRequiredMixin, View):
     """
@@ -399,9 +430,14 @@ class MessageView(LoginRequiredMixin, View):
                     conversation_session=session
                 )
                 
+                # Mark conversation as completed in UserProgress
+                user_progress = UserProgress.objects.get(user=request.user)
+                level_advanced = user_progress.increment_completed_conversations()
+                
                 return JsonResponse({
                     'success': True,
                     'conversation_completed': True,
+                    'level_advanced': level_advanced,
                     'user_message': {
                         'role': 'user',
                         'content': user_input,

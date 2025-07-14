@@ -56,7 +56,7 @@
                                 <span>{{ current_session.dialogue.total_exchanges }}</span>
                             </div>
                             <div class="w-24 h-2 bg-gray-200 rounded-full">
-                                <div class="h-2 bg-blue-500 rounded-full" style="width: {% widthratio current_session.current_exchange_index current_session.dialogue.total_exchanges 100 %}%"></div>
+                                <div class="h-2 bg-blue-500 rounded-full" style="width: {% widthratio current_session.current_exchange_index|add:1 current_session.dialogue.total_exchanges 100 %}%"></div>
                             </div>
                         </div>
                         {% endif %}
@@ -67,36 +67,34 @@
                 {% if not current_session or current_session.is_completed %}
                 <div id="topicSelection" class="bg-blue-50 border-b p-4">
                     <div class="max-w-4xl mx-auto">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Choose a Conversation Topic</h3>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-medium text-gray-900">Choose a Conversation Topic</h3>
+                            <div class="text-sm text-gray-600">
+                                <span class="font-medium">Level:</span> {{ user_progress.get_current_level_display_name }}
+                                <span class="ml-2 font-medium">Completed:</span> {{ user_progress.completed_conversations }}
+                            </div>
+                        </div>
                         
-                        <!-- Popular Topics -->
+                        <!-- Available Topics by Difficulty -->
                         <div class="mb-4">
-                            <p class="text-sm text-gray-600 mb-2">Popular Topics:</p>
+                            <p class="text-sm text-gray-600 mb-2">Available Topics:</p>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="Independence Day holiday">
-                                    Independence Day 🎆
+                                {% for topic in topics %}
+                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border relative" data-topic="{{ topic.name }}">
+                                    <div class="text-left">
+                                        <div>{{ topic.name }}</div>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            {% if topic.difficulty_level == 'easy' %}
+                                                🟢 Easy
+                                            {% elif topic.difficulty_level == 'medium' %}
+                                                🟡 Medium
+                                            {% else %}
+                                                🔴 Hard
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 </button>
-                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="favorite food">
-                                    Favorite Food 🍕
-                                </button>
-                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="travel experiences">
-                                    Travel 🌎
-                                </button>
-                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="hobbies and interests">
-                                    Hobbies 🎨
-                                </button>
-                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="weather and seasons">
-                                    Weather ⛅
-                                </button>
-                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="family and friends">
-                                    Family 👨‍👩‍👧‍👦
-                                </button>
-                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="work and career">
-                                    Work 💼
-                                </button>
-                                <button class="topic-btn bg-white hover:bg-blue-100 px-3 py-2 rounded-lg text-sm border" data-topic="movies and entertainment">
-                                    Movies 🎬
-                                </button>
+                                {% endfor %}
                             </div>
                         </div>
                         
