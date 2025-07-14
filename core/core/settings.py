@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-6k(4)1tok#d6a!4!eza*iy8cai58$f0k=ax2$hh=(f^-^svf=)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-CSRF_TRUSTED_ORIGINS = ['https://devosproj.duckdns.org', 'http://localhost', 'http://127.0.0.1', 'https://devosproj.duckdns.org']
+CSRF_TRUSTED_ORIGINS = ['https://devosproj.duckdns.org', 'http://localhost', 'http://127.0.0.1', 'http://devosproj.duckdns.org']
 
 ALLOWED_HOSTS = ['devosproj.duckdns.org', '145.79.12.81', 'localhost', '127.0.0.1']
 
