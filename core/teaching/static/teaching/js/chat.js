@@ -203,6 +203,26 @@ class ChatRoom {
         }
     }
 
+    updateProgress(currentIndex, totalExchanges) {
+        const progressContainer = document.querySelector('.flex.items-center.space-x-2.text-sm.text-gray-600');
+        if (progressContainer) {
+            // Update the numbers
+            const currentSpan = progressContainer.querySelector('.font-medium');
+            const totalSpan = progressContainer.querySelectorAll('span')[2];
+            if (currentSpan && totalSpan) {
+                currentSpan.textContent = currentIndex + 1;
+                totalSpan.textContent = totalExchanges;
+            }
+
+            // Update the progress bar
+            const progressBar = progressContainer.querySelector('.bg-blue-500');
+            if (progressBar) {
+                const percentage = ((currentIndex + 1) / totalExchanges) * 100;
+                progressBar.style.width = `${percentage}%`;
+            }
+        }
+    }
+
     async sendAudioMessage(audioBlob) {
         try {
             const formData = new FormData();
@@ -224,12 +244,40 @@ class ChatRoom {
             }
 
             const data = await response.json();
+            
+            // Update messages
             if (data.user_message) {
                 this.appendMessage(data.user_message);
             }
-            if (data.assistant_message) {
-                this.appendMessage(data.assistant_message);
+            if (data.feedback_message) {
+                this.appendMessage(data.feedback_message);
             }
+            if (data.continuation_message) {
+                this.appendMessage(data.continuation_message);
+                // Update progress bar
+                if (data.current_exchange_index !== undefined && data.total_exchanges) {
+                    this.updateProgress(data.current_exchange_index, data.total_exchanges);
+                }
+                // Update expected response
+                if (data.expected_response) {
+                    const expectedText = document.getElementById('expectedText');
+                    if (expectedText) {
+                        expectedText.textContent = data.expected_response;
+                    }
+                }
+            }
+            if (data.conversation_completed) {
+                // Handle conversation completion
+                const topicSelection = document.getElementById('topicSelection');
+                if (topicSelection) {
+                    topicSelection.style.display = 'block';
+                }
+                const expectedResponse = document.getElementById('expectedResponse');
+                if (expectedResponse) {
+                    expectedResponse.style.display = 'none';
+                }
+            }
+            
         } catch (error) {
             console.error('Error sending audio message:', error);
             alert('Failed to send audio message. Please try again.');
