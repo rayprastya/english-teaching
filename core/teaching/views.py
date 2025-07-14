@@ -456,7 +456,9 @@ class MessageView(LoginRequiredMixin, View):
                         'content': response_content
                     },
                     'word_comparison': word_comparison,
-                    'expected_response': expected_response
+                    'expected_response': expected_response,
+                    'current_exchange_index': session.current_exchange_index,
+                    'total_exchanges': session.dialogue.total_exchanges
                 })
             else:
                 # Move to next exchange
@@ -536,7 +538,8 @@ class MessageView(LoginRequiredMixin, View):
                 'expected_response': expected_response,
                 'exchange_number': current_exchange['exchange_number'],
                 'total_exchanges': session.dialogue.total_exchanges,
-                'word_comparison': word_comparison
+                'word_comparison': word_comparison,
+                'current_exchange_index': session.current_exchange_index
             })
 
 @require_http_methods(["GET", "POST"])
