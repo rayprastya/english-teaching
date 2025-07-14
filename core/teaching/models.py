@@ -45,18 +45,18 @@ class UserProgress(BaseModel):
     
     def get_available_difficulty_levels(self):
         """Get list of difficulty levels available to the user"""
-        if self.completed_conversations < 5:
+        if self.completed_conversations < 2:  # Changed from 5 to 2
             return ['easy']
-        elif self.completed_conversations < 10:
+        elif self.completed_conversations < 5:  # Changed from 10 to 5
             return ['easy', 'medium']
         else:
             return ['easy', 'medium', 'hard']
     
     def should_advance_level(self):
         """Check if user should advance to next level"""
-        if self.completed_conversations >= 5 and self.current_level == 'easy':
+        if self.completed_conversations >= 2 and self.current_level == 'easy':  # Changed from 5 to 2
             return 'medium'
-        elif self.completed_conversations >= 10 and self.current_level == 'medium':
+        elif self.completed_conversations >= 5 and self.current_level == 'medium':  # Changed from 10 to 5
             return 'hard'
         return None
     

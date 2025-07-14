@@ -102,8 +102,9 @@ class TopicView(LoginRequiredMixin, View):
             
             # Check if user has access to this topic's difficulty level
             if topic.difficulty_level not in user_progress.get_available_difficulty_levels():
+                required_convos = "2" if topic.difficulty_level == "medium" else "5"
                 return JsonResponse({
-                    'error': f'You need to complete more conversations to access {topic.get_difficulty_level_display()} level topics'
+                    'error': f'You need to complete {required_convos} conversations to access {topic.get_difficulty_level_display()} level topics'
                 }, status=400)
             
             # Generate new dialogue using AI with difficulty-appropriate parameters

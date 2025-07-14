@@ -52,10 +52,10 @@
                             <span>Progress:</span>
                             <div class="flex items-center space-x-1">
                                 <span class="font-medium">{{ current_session.current_exchange_index|add:1 }}</span>
-                                <span>/</span>
+                                <span class="mx-1">/</span>
                                 <span>{{ current_session.dialogue.total_exchanges }}</span>
                             </div>
-                            <div class="w-24 h-2 bg-gray-200 rounded-full">
+                            <div class="w-24 h-2 bg-gray-200 rounded-full ml-2">
                                 <div class="h-2 bg-blue-500 rounded-full" style="width: {% widthratio current_session.current_exchange_index|add:1 current_session.dialogue.total_exchanges 100 %}%"></div>
                             </div>
                         </div>
