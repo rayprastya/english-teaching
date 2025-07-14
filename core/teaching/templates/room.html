@@ -15,7 +15,7 @@
         <div class="mt-4">
             <h2 class="px-4 text-sm font-semibold text-gray-600">Your Chats</h2>
             <div id="chatList" class="mt-2">
-                {% for user_room in user_rooms %}
+                {% for user_room in rooms %}
                 <a href="{% url 'room' room_id=user_room.id %}" 
                    class="block px-4 py-2 text-sm {% if room and room.id == user_room.id %}bg-blue-50 text-blue-600 border-r-4 border-blue-600{% else %}text-gray-700 hover:bg-gray-50{% endif %}">
                     <div class="flex items-center justify-between">

@@ -24,7 +24,7 @@ class RoomView(LoginRequiredMixin, View):
         user_progress, created = UserProgress.objects.get_or_create(user=request.user)
         
         # Get all rooms for the user
-        user_rooms = Room.objects.filter(user=request.user).order_by('-created_at')
+        rooms = Room.objects.filter(user=request.user).order_by('-created_at')
         
         # Get available conversation topics based on user progress
         available_levels = user_progress.get_available_difficulty_levels()
@@ -61,7 +61,7 @@ class RoomView(LoginRequiredMixin, View):
         return render(request, self.template_name, {
             'room': room,
             'messages': messages,
-            'rooms': user_rooms,
+            'rooms': rooms,  # Changed from user_rooms to rooms
             'topics': topics,
             'current_session': current_session,
             'current_expected_response': current_expected_response,
