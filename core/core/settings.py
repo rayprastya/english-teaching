@@ -36,6 +36,10 @@ CSRF_COOKIE_SECURE = False  # Set to False for development, True for production
 CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript access to CSRF cookie
 CSRF_USE_SESSIONS = False  # Use cookies instead of sessions for CSRF
 CSRF_COOKIE_SAMESITE = 'Lax'  # Allow cross-site requests
+CSRF_COOKIE_DOMAIN = None  # Allow cookies on all domains
+CSRF_COOKIE_PATH = '/'  # Set cookie path to root
+CSRF_COOKIE_AGE = 31449600  # 1 year in seconds
+CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
 
 
 # Application definition

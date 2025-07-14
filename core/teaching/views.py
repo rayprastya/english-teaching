@@ -2,6 +2,8 @@ from django.views import View
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from .models import Room, Message, ConversationTopic, Dialogue, ConversationSession, UserProgress
 from core.utils.whisper import transcribe_audio
 from core.utils.conversation_ai import ConversationAI
@@ -72,11 +74,17 @@ class RoomView(LoginRequiredMixin, View):
         room = Room.objects.create(user=request.user, title=title)
         return redirect('room', room_id=room.id)
 
+@method_decorator(csrf_exempt, name='dispatch')
 class TopicView(LoginRequiredMixin, View):
     """Handle topic-related operations"""
     
     def post(self, request, room_id):
         """Generate a new conversation for a selected topic"""
+        # Debug CSRF token
+        print(f"CSRF Token in request: {request.META.get('HTTP_X_CSRFTOKEN')}")
+        print(f"CSRF Token in cookies: {request.COOKIES.get('csrftoken')}")
+        print(f"Request headers: {dict(request.headers)}")
+        
         room = get_object_or_404(Room, id=room_id, user=request.user)
         
         # Get or create user progress
@@ -600,3 +608,15 @@ def signup_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+@csrf_exempt
+def test_csrf(request):
+    """Test endpoint to check CSRF functionality"""
+    if request.method == 'POST':
+        return JsonResponse({
+            'success': True,
+            'message': 'CSRF test successful',
+            'csrf_token': request.META.get('HTTP_X_CSRFTOKEN'),
+            'cookies': dict(request.COOKIES)
+        })
+    return JsonResponse({'message': 'Send POST request to test CSRF'})
