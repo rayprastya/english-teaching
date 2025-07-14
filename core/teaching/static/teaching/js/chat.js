@@ -197,6 +197,37 @@ class ChatRoom {
             if (data.assistant_message) {
                 this.appendMessage(data.assistant_message);
             }
+            if (data.feedback_message) {
+                this.appendMessage(data.feedback_message);
+            }
+            if (data.continuation_message) {
+                this.appendMessage(data.continuation_message);
+            }
+            
+            // Update progress bar if we have the data
+            if (data.current_exchange_index !== undefined && data.total_exchanges) {
+                this.updateProgress(data.current_exchange_index, data.total_exchanges);
+            }
+
+            // Update expected response if provided
+            if (data.expected_response) {
+                const expectedText = document.getElementById('expectedText');
+                if (expectedText) {
+                    expectedText.textContent = data.expected_response;
+                }
+            }
+
+            // Handle conversation completion
+            if (data.conversation_completed) {
+                const topicSelection = document.getElementById('topicSelection');
+                if (topicSelection) {
+                    topicSelection.style.display = 'block';
+                }
+                const expectedResponse = document.getElementById('expectedResponse');
+                if (expectedResponse) {
+                    expectedResponse.style.display = 'none';
+                }
+            }
         } catch (error) {
             console.error('Error sending message:', error);
             alert('Failed to send message. Please try again.');

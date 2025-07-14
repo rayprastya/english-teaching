@@ -50,7 +50,7 @@
                         {% if current_session and not current_session.is_completed %}
                         <div class="flex items-center space-x-2 text-sm text-gray-600">
                             <span>Progress:</span>
-                            <div class="flex items-center space-x-1">
+                            <div class="flex items-center">
                                 <span class="font-medium">{{ current_session.current_exchange_index|add:1 }}</span>
                                 <span class="mx-1">/</span>
                                 <span>{{ current_session.dialogue.total_exchanges }}</span>
