@@ -200,9 +200,13 @@ class MessageView(LoginRequiredMixin, View):
                 'incorrect_words': []
             }
         
+        # Clean and normalize input
+        user_input = user_input.lower().strip().replace("'", "'")  # Normalize apostrophes
+        expected_text = expected_text.lower().strip().replace("'", "'")
+        
         # Clean and split into words
-        user_words = user_input.lower().strip().split()
-        expected_words = expected_text.lower().strip().split()
+        user_words = user_input.split()
+        expected_words = expected_text.split()
         
         word_analysis = []
         incorrect_words = []
@@ -212,9 +216,6 @@ class MessageView(LoginRequiredMixin, View):
         # Use difflib for better word matching
         import difflib
         matcher = difflib.SequenceMatcher(None, user_words, expected_words)
-        
-        user_idx = 0
-        expected_idx = 0
         
         for tag, i1, i2, j1, j2 in matcher.get_opcodes():
             if tag == 'equal':
@@ -235,7 +236,9 @@ class MessageView(LoginRequiredMixin, View):
                     if user_word and expected_word:
                         # Check if it's a close match (similar spelling)
                         similarity = difflib.SequenceMatcher(None, user_word, expected_word).ratio()
-                        if similarity > 0.6:  # 60% similarity threshold
+                        if similarity > 0.9:  # Increased threshold for more accuracy
+                            status = 'correct'
+                        elif similarity > 0.7:  # Adjusted threshold for close matches
                             status = 'close'
                         else:
                             status = 'incorrect'
@@ -247,11 +250,13 @@ class MessageView(LoginRequiredMixin, View):
                             'position': len(word_analysis),
                             'similarity': round(similarity * 100)
                         })
-                        incorrect_words.append({
-                            'user_word': user_word,
-                            'expected_word': expected_word,
-                            'position': len(word_analysis) - 1
-                        })
+                        
+                        if status != 'correct':
+                            incorrect_words.append({
+                                'user_word': user_word,
+                                'expected_word': expected_word,
+                                'position': len(word_analysis) - 1
+                            })
                     elif expected_word:
                         missing_words.append({
                             'word': expected_word,
@@ -419,6 +424,7 @@ class MessageView(LoginRequiredMixin, View):
         if spelling_score >= ACCEPTABLE_SCORE:
             # Good pronunciation - advance to next exchange
             session.advance_to_next_exchange()
+            session.save()  # Make sure to save the session
             
             if session.is_completed:
                 # Conversation completed
@@ -433,7 +439,7 @@ class MessageView(LoginRequiredMixin, View):
                 )
                 
                 # Mark conversation as completed in UserProgress
-                user_progress = UserProgress.objects.get(user=request.user)
+                user_progress = UserProgress.objects.get(user=room.user)
                 level_advanced = user_progress.increment_completed_conversations()
                 
                 return JsonResponse({
@@ -497,7 +503,8 @@ class MessageView(LoginRequiredMixin, View):
                     'exchange_number': next_exchange['exchange_number'],
                     'total_exchanges': session.dialogue.total_exchanges,
                     'word_comparison': word_comparison,
-                    'previous_expected': expected_response
+                    'previous_expected': expected_response,
+                    'current_exchange_index': session.current_exchange_index  # Add this to help track progress
                 })
         else:
             # Pronunciation needs improvement - don't advance

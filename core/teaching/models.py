@@ -106,16 +106,18 @@ class ConversationSession(BaseModel):
     def get_current_exchange(self):
         """Get the current exchange the user should respond to"""
         exchanges = self.dialogue.get_exchanges()
-        if self.current_exchange_index < len(exchanges):
+        if not self.is_completed and self.current_exchange_index < len(exchanges):
             return exchanges[self.current_exchange_index]
         return None
     
     def advance_to_next_exchange(self):
         """Move to the next exchange in the dialogue"""
+        exchanges = self.dialogue.get_exchanges()
         self.current_exchange_index += 1
-        if self.current_exchange_index >= len(self.dialogue.get_exchanges()):
+        if self.current_exchange_index >= len(exchanges):
             self.is_completed = True
-        self.save()
+            self.save()
+        return self.current_exchange_index
     
     def __str__(self):
         return f"Session for {self.dialogue.topic.name} - Exchange {self.current_exchange_index + 1}"
