@@ -86,7 +86,7 @@ DATABASES = {
         'NAME': constant.DB_NAME,
         'USER': constant.DB_USER,
         'PASSWORD': constant.DB_PASSWORD,
-        'HOST': os.getenv('DB_HOST', 'localhost'),  # Use localhost for local development
+        'HOST': os.getenv('DB_HOST', 'db'),  # Use 'db' for Docker Compose networking
         'PORT': constant.DB_PORT,
     }
 }
