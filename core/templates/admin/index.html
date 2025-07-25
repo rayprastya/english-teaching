@@ -1,0 +1,26 @@
+{% extends "admin/index.html" %}
+{% load i18n static %}
+
+{% block content %}
+{{ block.super }}
+
+<div class="module" style="margin-top: 20px;">
+    <h2>📈 Analytics & Reports</h2>
+    <table summary="{% trans 'Available actions.' %}">
+        <tbody>
+            <tr class="model-teaching">
+                <th scope="row">
+                    <a href="{% url 'score_analytics' %}">
+                        📊 Student Score Analytics
+                    </a>
+                </th>
+                <td>
+                    <a href="{% url 'score_analytics' %}" class="addlink">
+                        View comprehensive score analytics and student performance reports
+                    </a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import RoomView, MessageView, TopicView, login_view, signup_view, logout_view, test_csrf
+from .admin_views import ScoreAnalyticsView
 
 urlpatterns = [
     path('', RoomView.as_view(), name='room_list'),  # Main room list view
@@ -10,5 +11,6 @@ urlpatterns = [
     path('signup/', signup_view, name='signup'),
     path('logout/', logout_view, name='logout'),
     path('test-csrf/', test_csrf, name='test_csrf'),
+    path('admin/score-analytics/', ScoreAnalyticsView.as_view(), name='score_analytics'),
 ]
 
