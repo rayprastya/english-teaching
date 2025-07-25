@@ -31,6 +31,12 @@ CSRF_TRUSTED_ORIGINS = ['http://devosproj.duckdns.org','https://devosproj.duckdn
 
 ALLOWED_HOSTS = ['devosproj.duckdns.org', '145.79.12.81', 'localhost', '127.0.0.1', "145.79.12.81"]
 
+# Add CSRF settings for admin access
+CSRF_COOKIE_SECURE = False  # Set to True if using HTTPS
+CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = False
+CSRF_COOKIE_SAMESITE = 'Lax'
+
 
 # Application definition
 

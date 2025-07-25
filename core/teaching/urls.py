@@ -11,6 +11,6 @@ urlpatterns = [
     path('signup/', signup_view, name='signup'),
     path('logout/', logout_view, name='logout'),
     path('test-csrf/', test_csrf, name='test_csrf'),
-    path('admin/score-analytics/', ScoreAnalyticsView.as_view(), name='score_analytics'),
+    path('score-analytics/', ScoreAnalyticsView.as_view(), name='score_analytics'),
 ]
 
