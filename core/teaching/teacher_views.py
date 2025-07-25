@@ -4,6 +4,8 @@ from django.views import View
 from django.http import JsonResponse
 from django.contrib import messages
 from django.db.models import Avg, Count
+from django.contrib.auth import login
+from django.views.decorators.http import require_http_methods
 from .models import Teacher, TeacherReferral, StudentEnrollment, Message, UserProgress
 from django.contrib.auth.models import User
 
@@ -146,3 +148,71 @@ class ToggleReferralView(LoginRequiredMixin, View):
         messages.success(request, f"Referral code '{referral.code}' has been {status}.")
         
         return redirect('teacher_dashboard')
+
+@require_http_methods(["GET", "POST"])
+def teacher_signup_view(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        school = request.POST.get('school', '').strip()
+        password = request.POST.get('password', '')
+        password_confirm = request.POST.get('password_confirm', '')
+
+        # Validation
+        if not all([name, username, email, password, password_confirm]):
+            return render(request, 'teacher_signup.html', {
+                'error_message': 'Please fill in all required fields'
+            })
+
+        if password != password_confirm:
+            return render(request, 'teacher_signup.html', {
+                'error_message': 'Passwords do not match'
+            })
+
+        if len(password) < 6:
+            return render(request, 'teacher_signup.html', {
+                'error_message': 'Password must be at least 6 characters long'
+            })
+
+        # Check if username or email already exists
+        if User.objects.filter(username=username).exists():
+            return render(request, 'teacher_signup.html', {
+                'error_message': 'Username already exists'
+            })
+
+        if User.objects.filter(email=email).exists():
+            return render(request, 'teacher_signup.html', {
+                'error_message': 'Email already registered'
+            })
+
+        try:
+            # Create user
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=name.split(' ')[0] if ' ' in name else name,
+                last_name=' '.join(name.split(' ')[1:]) if ' ' in name else ''
+            )
+
+            # Create teacher profile
+            teacher = Teacher.objects.create(
+                user=user,
+                name=name,
+                email=email,
+                school=school or ''
+            )
+
+            # Auto-login the teacher
+            login(request, user)
+            
+            messages.success(request, f"Welcome {name}! Your teacher account has been created successfully.")
+            return redirect('teacher_dashboard')
+
+        except Exception as e:
+            return render(request, 'teacher_signup.html', {
+                'error_message': f'Error creating account: {str(e)}'
+            })
+
+    return render(request, 'teacher_signup.html')

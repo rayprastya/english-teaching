@@ -1,0 +1,115 @@
+{% extends 'teaching_base.html' %}
+{% load static %}
+
+{% block page_title %}Teacher Registration{% endblock %}
+
+{% block teaching_content %}
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-md w-full space-y-8 animate-slide-in">
+        <div>
+            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                🎓 Teacher Registration
+            </h2>
+            <p class="mt-2 text-center text-sm text-gray-600">
+                Create your teacher account to monitor student progress
+            </p>
+            <p class="mt-1 text-center text-xs text-gray-500">
+                Already have an account?
+                <a href="{% url 'login' %}" class="font-medium text-blue-600 hover:text-blue-500">
+                    Sign in here
+                </a>
+            </p>
+        </div>
+        <form class="mt-8 space-y-6" method="POST" action="{% url 'teacher_signup' %}">
+            {% csrf_token %}
+            {% if error_message %}
+            <div class="rounded-md bg-red-50 p-4">
+                <div class="flex">
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-red-800">
+                            {{ error_message }}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if success_message %}
+            <div class="rounded-md bg-green-50 p-4">
+                <div class="flex">
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-green-800">
+                            {{ success_message }}
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="space-y-4">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                    <input id="name" name="name" type="text" required 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
+                           placeholder="e.g., John Smith"
+                           value="{{ request.POST.name|default:'' }}">
+                </div>
+
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input id="username" name="username" type="text" required 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
+                           placeholder="e.g., teacher_john"
+                           value="{{ request.POST.username|default:'' }}">
+                </div>
+
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input id="email" name="email" type="email" required 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
+                           placeholder="teacher@school.edu"
+                           value="{{ request.POST.email|default:'' }}">
+                </div>
+
+                <div>
+                    <label for="school" class="block text-sm font-medium text-gray-700">School/Institution</label>
+                    <input id="school" name="school" type="text" 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
+                           placeholder="e.g., ABC High School (Optional)"
+                           value="{{ request.POST.school|default:'' }}">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input id="password" name="password" type="password" required 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
+                           placeholder="Password">
+                </div>
+
+                <div>
+                    <label for="password_confirm" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                    <input id="password_confirm" name="password_confirm" type="password" required 
+                           class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" 
+                           placeholder="Confirm Password">
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" 
+                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        🎓
+                    </span>
+                    Create Teacher Account
+                </button>
+            </div>
+
+            <div class="text-center">
+                <p class="text-xs text-gray-500">
+                    By creating an account, you agree to monitor students responsibly and maintain their privacy.
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
