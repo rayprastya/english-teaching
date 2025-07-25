@@ -1,0 +1,214 @@
+{% extends 'teaching_base.html' %}
+{% load static %}
+
+{% block page_title %}Referral Details - {{ referral.name }}{% endblock %}
+
+{% block teaching_content %}
+<div class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Header -->
+    <div class="mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ referral.name }}</h1>
+                <p class="text-gray-600">Code: <span class="font-mono font-bold text-lg">{{ referral.code }}</span></p>
+            </div>
+            <div class="flex space-x-3">
+                <a href="{% url 'teacher_dashboard' %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                    ← Back to Dashboard
+                </a>
+                {% if referral.is_active %}
+                    <span class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-green-100 text-green-800">
+                        🟢 Active
+                    </span>
+                {% else %}
+                    <span class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-red-100 text-red-800">
+                        🔴 Inactive
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Total Students</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ student_stats|length }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Total Attempts</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ referral.get_total_attempts }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-100 rounded-lg">
+                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Average Score</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ referral.get_average_score }}%</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-purple-100 rounded-lg">
+                    <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Created</p>
+                    <p class="text-sm font-bold text-gray-900">{{ referral.created_at|date:"M d, Y" }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Performance Table -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-gray-900">Student Performance</h2>
+                <div class="text-sm text-gray-600">
+                    Last updated: {{ referral.updated_at|date:"M d, Y H:i" }}
+                </div>
+            </div>
+            
+            {% if student_stats %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Attempts</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Average Score</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Recent (7d)</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trend</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enrolled</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for stat in student_stats %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <span class="text-sm font-medium text-blue-600">{{ stat.user.username|first|upper }}</span>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ stat.user.username }}</div>
+                                        {% if stat.user.first_name or stat.user.last_name %}
+                                        <div class="text-sm text-gray-500">{{ stat.user.first_name }} {{ stat.user.last_name }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if stat.progress %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                          {% if stat.progress.current_level == 'easy' %}bg-green-100 text-green-800
+                                          {% elif stat.progress.current_level == 'medium' %}bg-yellow-100 text-yellow-800
+                                          {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ stat.progress.get_current_level_display_name }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {% if stat.progress %}
+                                    {{ stat.progress.completed_conversations }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {{ stat.total_attempts }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if stat.avg_score > 0 %}
+                                    <div class="flex items-center">
+                                        {% if stat.avg_score >= 90 %}
+                                            <span class="text-green-600">🟢</span>
+                                        {% elif stat.avg_score >= 70 %}
+                                            <span class="text-yellow-600">🟡</span>
+                                        {% else %}
+                                            <span class="text-red-600">🔴</span>
+                                        {% endif %}
+                                        <span class="ml-2 text-sm font-medium">{{ stat.avg_score }}%</span>
+                                    </div>
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {% if stat.recent_avg > 0 %}
+                                    {{ stat.recent_avg }}% <span class="text-xs text-gray-500">({{ stat.recent_attempts }})</span>
+                                {% else %}
+                                    <span class="text-gray-400">No recent activity</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                {% if stat.avg_score > 0 and stat.recent_avg > 0 %}
+                                    {% if stat.recent_avg > stat.avg_score %}
+                                        <span class="text-green-600">📈 Improving</span>
+                                    {% elif stat.recent_avg < stat.avg_score %}
+                                        <span class="text-red-600">📉 Declining</span>
+                                    {% else %}
+                                        <span class="text-gray-600">➡️ Stable</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-gray-400">📊 No data</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ stat.enrollment.enrolled_at|date:"M d, Y" }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No students enrolled</h3>
+                <p class="mt-1 text-sm text-gray-500">Share your referral code with students to get started.</p>
+                <div class="mt-4 p-3 bg-gray-100 rounded-lg">
+                    <p class="text-sm font-medium text-gray-900">Your referral code:</p>
+                    <p class="text-lg font-mono font-bold text-blue-600">{{ referral.code }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

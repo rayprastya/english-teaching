@@ -3,8 +3,79 @@ from django.contrib.auth.models import User
 from core.utils.base_model import BaseModel
 from django.db.models import Avg, Count, Q
 import json
+import uuid
 
 # Create your models here.
+class Teacher(BaseModel):
+    """Teacher profile for managing students"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='teacher_profile')
+    name = models.CharField(max_length=200)
+    email = models.EmailField()
+    school = models.CharField(max_length=200, blank=True)
+    is_active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return f"{self.name} ({self.user.username})"
+
+class TeacherReferral(BaseModel):
+    """Referral codes created by teachers for student monitoring"""
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='referrals')
+    code = models.CharField(max_length=20, unique=True, db_index=True)
+    name = models.CharField(max_length=200, help_text="Name/description for this referral")
+    class_name = models.CharField(max_length=100, blank=True, help_text="Class or group name")
+    is_active = models.BooleanField(default=True)
+    expires_at = models.DateTimeField(null=True, blank=True, help_text="Optional expiration date")
+    
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self.generate_unique_code()
+        super().save(*args, **kwargs)
+    
+    def generate_unique_code(self):
+        """Generate a unique 8-character referral code"""
+        while True:
+            code = str(uuid.uuid4()).replace('-', '')[:8].upper()
+            if not TeacherReferral.objects.filter(code=code).exists():
+                return code
+    
+    def get_students_count(self):
+        """Get number of students using this referral"""
+        return self.student_enrollments.count()
+    
+    def get_total_attempts(self):
+        """Get total attempts by students using this referral"""
+        from .models import Message
+        return Message.objects.filter(
+            room__user__student_enrollments__referral=self,
+            role='user',
+            spelling_score__isnull=False
+        ).count()
+    
+    def get_average_score(self):
+        """Get average score of students using this referral"""
+        from .models import Message
+        avg = Message.objects.filter(
+            room__user__student_enrollments__referral=self,
+            role='user',
+            spelling_score__isnull=False
+        ).aggregate(avg=Avg('spelling_score'))['avg']
+        return round(avg, 2) if avg else 0
+    
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+class StudentEnrollment(BaseModel):
+    """Links students to teacher referrals"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='student_enrollments')
+    referral = models.ForeignKey(TeacherReferral, on_delete=models.CASCADE, related_name='student_enrollments')
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['user', 'referral']
+    
+    def __str__(self):
+        return f"{self.user.username} -> {self.referral.code}"
+
 class Room(BaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, db_index=True)
     title = models.CharField(max_length=255, default="New Chat")

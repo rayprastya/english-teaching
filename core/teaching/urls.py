@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import RoomView, MessageView, TopicView, login_view, signup_view, logout_view, test_csrf
 from .admin_views import ScoreAnalyticsView
+from .teacher_views import TeacherDashboardView, CreateReferralView, ReferralDetailView, ToggleReferralView
 
 urlpatterns = [
     path('', RoomView.as_view(), name='room_list'),  # Main room list view
@@ -12,5 +13,10 @@ urlpatterns = [
     path('logout/', logout_view, name='logout'),
     path('test-csrf/', test_csrf, name='test_csrf'),
     path('score-analytics/', ScoreAnalyticsView.as_view(), name='score_analytics'),
+    # Teacher URLs
+    path('teacher/', TeacherDashboardView.as_view(), name='teacher_dashboard'),
+    path('teacher/create-referral/', CreateReferralView.as_view(), name='create_referral'),
+    path('teacher/referral/<int:referral_id>/', ReferralDetailView.as_view(), name='referral_detail'),
+    path('teacher/referral/<int:referral_id>/toggle/', ToggleReferralView.as_view(), name='toggle_referral'),
 ]
 

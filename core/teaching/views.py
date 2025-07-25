@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.utils import timezone
 from .models import Room, Message, ConversationTopic, Dialogue, ConversationSession, UserProgress
 from core.utils.whisper import transcribe_audio
 from core.utils.conversation_ai import ConversationAI
@@ -87,9 +88,27 @@ class TopicView(LoginRequiredMixin, View):
         try:
             data = json.loads(request.body)
             topic_name = data.get('topic')
+            referral_code = data.get('referral_code', '').strip()
             
             if not topic_name:
                 return JsonResponse({'error': 'Topic name is required'}, status=400)
+            
+            # Handle referral code if provided
+            if referral_code:
+                from .models import TeacherReferral, StudentEnrollment
+                try:
+                    referral = TeacherReferral.objects.get(code=referral_code, is_active=True)
+                    # Check if expiration date is set and not expired
+                    if referral.expires_at and referral.expires_at < timezone.now():
+                        return JsonResponse({'error': 'Referral code has expired'}, status=400)
+                    
+                    # Create enrollment if it doesn't exist
+                    StudentEnrollment.objects.get_or_create(
+                        user=request.user,
+                        referral=referral
+                    )
+                except TeacherReferral.DoesNotExist:
+                    return JsonResponse({'error': 'Invalid referral code'}, status=400)
             
             # Get or create the topic
             topic, created = ConversationTopic.objects.get_or_create(

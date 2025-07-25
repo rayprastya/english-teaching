@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
-from .models import Room, Message, ConversationTopic, Dialogue, ConversationSession, UserProgress
+from .models import Room, Message, ConversationTopic, Dialogue, ConversationSession, UserProgress, Teacher, TeacherReferral, StudentEnrollment
 
 # Register your models here.
 
@@ -148,3 +148,51 @@ def admin_index_view(request, extra_context=None):
     return admin.site.index(request, extra_context)
 
 admin.site.index = admin_index_view
+
+@admin.register(Teacher)
+class TeacherAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'user', 'email', 'school', 'is_active', 'total_referrals', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['name', 'email', 'user__username', 'school']
+    readonly_fields = ['created_at', 'updated_at']
+    
+    def total_referrals(self, obj):
+        return obj.referrals.count()
+    total_referrals.short_description = 'Total Referrals'
+
+@admin.register(TeacherReferral)
+class TeacherReferralAdmin(admin.ModelAdmin):
+    list_display = ['id', 'code', 'name', 'teacher', 'class_name', 'students_count', 'avg_score', 'is_active', 'created_at']
+    list_filter = ['is_active', 'created_at', 'teacher']
+    search_fields = ['code', 'name', 'class_name', 'teacher__name']
+    readonly_fields = ['code', 'created_at', 'updated_at']
+    
+    def students_count(self, obj):
+        return obj.get_students_count()
+    students_count.short_description = 'Students'
+    
+    def avg_score(self, obj):
+        score = obj.get_average_score()
+        if score > 0:
+            if score >= 90:
+                return f"🟢 {score}%"
+            elif score >= 70:
+                return f"🟡 {score}%"
+            else:
+                return f"🔴 {score}%"
+        return "No data"
+    avg_score.short_description = 'Avg Score'
+
+@admin.register(StudentEnrollment)
+class StudentEnrollmentAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'referral_code', 'teacher_name', 'enrolled_at']
+    list_filter = ['enrolled_at', 'referral__teacher']
+    search_fields = ['user__username', 'referral__code', 'referral__name']
+    
+    def referral_code(self, obj):
+        return obj.referral.code
+    referral_code.short_description = 'Referral Code'
+    
+    def teacher_name(self, obj):
+        return obj.referral.teacher.name
+    teacher_name.short_description = 'Teacher'
