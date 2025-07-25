@@ -565,23 +565,39 @@ class MessageView(LoginRequiredMixin, View):
 @require_http_methods(["GET", "POST"])
 def login_view(request):
     if request.method == 'POST':
-        email = request.POST.get('email', '')
+        email_or_username = request.POST.get('email', '')
         password = request.POST.get('password', '')
         
-        if not email or not password:
-            return render(request, 'login.html', {'error_message': 'Please provide both email and password'})
+        if not email_or_username or not password:
+            return render(request, 'login.html', {'error_message': 'Please provide both username/email and password'})
         
+        # Try to find user by email first, then by username
+        user = None
         try:
-            user = User.objects.get(email=email)
-            user = authenticate(request, username=user.username, password=password)
-            
-            if user is not None:
-                login(request, user)
-                return redirect('room_list')
+            # Try by email first
+            if '@' in email_or_username:
+                user = User.objects.get(email=email_or_username)
             else:
-                return render(request, 'login.html', {'error_message': 'Invalid email or password'})
+                # Try by username
+                user = User.objects.get(username=email_or_username)
         except User.DoesNotExist:
-            return render(request, 'login.html', {'error_message': 'Invalid email or password'})
+            # If email failed, try username, or vice versa
+            try:
+                if '@' in email_or_username:
+                    user = User.objects.get(username=email_or_username)
+                else:
+                    user = User.objects.get(email=email_or_username)
+            except User.DoesNotExist:
+                return render(request, 'login.html', {'error_message': 'Invalid username/email or password'})
+        
+        # Authenticate user
+        authenticated_user = authenticate(request, username=user.username, password=password)
+        
+        if authenticated_user is not None:
+            login(request, authenticated_user)
+            return redirect('room_list')
+        else:
+            return render(request, 'login.html', {'error_message': 'Invalid username/email or password'})
     
     return render(request, 'login.html')
 
