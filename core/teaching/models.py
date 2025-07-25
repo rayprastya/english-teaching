@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from core.utils.base_model import BaseModel
+from django.db.models import Avg, Count, Q
 import json
 
 # Create your models here.
@@ -76,6 +77,63 @@ class UserProgress(BaseModel):
         self.save()
         return level_advanced
     
+    def get_average_score(self):
+        """Calculate average spelling score for this user"""
+        from .models import Message
+        avg_score = Message.objects.filter(
+            room__user=self.user,
+            role='user',
+            spelling_score__isnull=False
+        ).aggregate(avg_score=Avg('spelling_score'))['avg_score']
+        return round(avg_score, 2) if avg_score else 0
+    
+    def get_total_attempts(self):
+        """Get total number of user responses with scores"""
+        from .models import Message
+        return Message.objects.filter(
+            room__user=self.user,
+            role='user',
+            spelling_score__isnull=False
+        ).count()
+    
+    def get_score_distribution(self):
+        """Get score distribution (excellent, good, needs improvement)"""
+        from .models import Message
+        messages = Message.objects.filter(
+            room__user=self.user,
+            role='user',
+            spelling_score__isnull=False
+        )
+        
+        total = messages.count()
+        if total == 0:
+            return {'excellent': 0, 'good': 0, 'needs_improvement': 0}
+            
+        excellent = messages.filter(spelling_score__gte=90).count()
+        good = messages.filter(spelling_score__gte=70, spelling_score__lt=90).count()
+        needs_improvement = messages.filter(spelling_score__lt=70).count()
+        
+        return {
+            'excellent': round((excellent / total) * 100, 1),
+            'good': round((good / total) * 100, 1),
+            'needs_improvement': round((needs_improvement / total) * 100, 1)
+        }
+    
+    def get_recent_performance(self, days=7):
+        """Get average score for recent days"""
+        from django.utils import timezone
+        from datetime import timedelta
+        from .models import Message
+        
+        recent_date = timezone.now() - timedelta(days=days)
+        avg_score = Message.objects.filter(
+            room__user=self.user,
+            role='user',
+            spelling_score__isnull=False,
+            created_at__gte=recent_date
+        ).aggregate(avg_score=Avg('spelling_score'))['avg_score']
+        return round(avg_score, 2) if avg_score else 0
+
     def __str__(self):
         return f"{self.user.username} - Level: {self.get_current_level_display_name()}, Completed: {self.completed_conversations}"
 
