@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-6k(4)1tok#d6a!4!eza*iy8cai58$f0k=ax2$hh=(f^-^svf=)
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-CSRF_TRUSTED_ORIGINS = ['http://english-teaching.my.id','http://devosproj.duckdns.org','https://devosproj.duckdns.org',"http://145.79.12.81", "https://145.79.12.81"]
+CSRF_TRUSTED_ORIGINS = ['http://english-teaching.my.id','https://english-teaching.my.id','http://devosproj.duckdns.org','https://devosproj.duckdns.org',"http://145.79.12.81", "https://145.79.12.81"]
 
 ALLOWED_HOSTS = ['english-teaching.my.id','devosproj.duckdns.org', '145.79.12.81', 'localhost', '127.0.0.1', "145.79.12.81",'202.10.44.247']
 
@@ -36,6 +36,7 @@ CSRF_COOKIE_SECURE = False  # Set to True if using HTTPS
 CSRF_COOKIE_HTTPONLY = False
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_SAMESITE = 'Lax'
+# CSRF_COOKIE_DOMAIN = '.english-teaching.my.id'
 
 
 # Application definition
