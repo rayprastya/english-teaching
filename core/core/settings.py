@@ -29,7 +29,7 @@ DEBUG = True
 
 CSRF_TRUSTED_ORIGINS = ['http://english-teaching.my.id','http://devosproj.duckdns.org','https://devosproj.duckdns.org',"http://145.79.12.81", "https://145.79.12.81"]
 
-ALLOWED_HOSTS = ['english-teaching.my.id','devosproj.duckdns.org', '145.79.12.81', 'localhost', '127.0.0.1', "145.79.12.81"]
+ALLOWED_HOSTS = ['english-teaching.my.id','devosproj.duckdns.org', '145.79.12.81', 'localhost', '127.0.0.1', "145.79.12.81",'202.10.44.247']
 
 # Add CSRF settings for admin access
 CSRF_COOKIE_SECURE = False  # Set to True if using HTTPS
