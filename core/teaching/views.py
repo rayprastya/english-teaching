@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.utils import timezone
-from .models import Room, Message, ConversationTopic, Dialogue, ConversationSession, UserProgress
+from .models import Room, Message, ConversationTopic, Dialogue, ConversationSession, UserProgress, Teacher
 from core.utils.whisper import transcribe_audio
 from core.utils.conversation_ai import ConversationAI
 import json
@@ -595,7 +595,12 @@ def login_view(request):
         
         if authenticated_user is not None:
             login(request, authenticated_user)
-            return redirect('room_list')
+            # Check if user is a teacher and redirect accordingly
+            try:
+                authenticated_user.teacher_profile
+                return redirect('teacher_dashboard')
+            except Teacher.DoesNotExist:
+                return redirect('room_list')
         else:
             return render(request, 'login.html', {'error_message': 'Invalid username/email or password'})
     
