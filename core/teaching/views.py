@@ -592,14 +592,15 @@ def login_view(request):
         
         # Authenticate user
         authenticated_user = authenticate(request, username=user.username, password=password)
-        
+
         if authenticated_user is not None:
             login(request, authenticated_user)
             # Check if user is a teacher and redirect accordingly
-            try:
-                authenticated_user.teacher_profile
+            # Query the Teacher model directly to avoid caching issues
+            is_teacher = Teacher.objects.filter(user=authenticated_user).exists()
+            if is_teacher:
                 return redirect('teacher_dashboard')
-            except Teacher.DoesNotExist:
+            else:
                 return redirect('room_list')
         else:
             return render(request, 'login.html', {'error_message': 'Invalid username/email or password'})
